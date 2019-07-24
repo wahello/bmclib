@@ -148,14 +148,14 @@ func (r *RedFish) Name() (name string, err error) {
 		return name, err
 	}
 
-	entries, err := r.service.Managers()
+	entries, err := r.service.Systems()
 	if err != nil {
 		return name, err
 	}
 
 	for _, e := range entries {
-		if e.ManagerType == "BMC" {
-			return , err
+		if e.SystemType == "Physical" {
+			return e.HostName, err
 		}
 	}
 	return name, err
