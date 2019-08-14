@@ -160,3 +160,63 @@ func (r *RedFish) Name() (name string, err error) {
 	}
 	return name, err
 }
+
+// Status returns health string status from the bmc
+func (r *RedFish) Status() (status string, err error) {
+	err = r.httpLogin()
+	if err != nil {
+		return status, err
+	}
+
+	entries, err := r.service.Systems()
+	if err != nil {
+		return status, err
+	}
+
+	for _, e := range entries {
+		if e.SystemType == "Physical" {
+			return string(e.Status.Health), err
+		}
+	}
+	return status, err
+}
+
+// Memory returns the total amount of memory of the server
+func (r *RedFish) Memory() (memory int, err error) {
+	err = r.httpLogin()
+	if err != nil {
+		return memory, err
+	}
+
+	entries, err := r.service.Systems()
+	if err != nil {
+		return memory, err
+	}
+
+	for _, e := range entries {
+		if e.SystemType == "Physical" {
+			return int(e.MemorySummary.TotalSystemMemoryGiB), err
+		}
+	}
+	return memory, err
+}
+
+// CPU returns the cpu, cores and hyperthreads of the server
+func (r *RedFish) CPU() (cpu string, cpuCount int, coreCount int, hyperthreadCount int, err error) {
+	err = r.httpLogin()
+	if err != nil {
+		return cpu, cpuCount, coreCount, hyperthreadCount, err
+	}
+
+	entries, err := r.service.Systems()
+	if err != nil {
+		return cpu, cpuCount, coreCount, hyperthreadCount, err
+	}
+
+	for _, e := range entries {
+		if e.SystemType == "Physical" {
+			return e.ProcessorSummary.Model, e.ProcessorSummary.Count, err
+		}
+	}
+	return cpu, cpuCount, coreCount, hyperthreadCount, err
+}
