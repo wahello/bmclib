@@ -6,34 +6,37 @@ import (
 
 	"github.com/bmc-toolbox/bmclib/internal/httpclient"
 
-	gofish "github.com/stmcginnis/gofish/school"
+	"github.com/stmcginnis/gofish"
 	// this make possible to setup logging and properties at any stage
 	_ "github.com/bmc-toolbox/bmclib/logging"
 )
 
-// Ilo holds the status and properties of a connection to an iLO device
+// RedFish holds the status and properties of a connection to an Redfish service
+// it wraps the gofish.APIClient
 type RedFish struct {
-	ip        string
-	username  string
-	password  string
-	apiClient *gofish.ApiClient
-	service   *gofish.Service
-	sessionID *string
+	ip           string
+	apiClient    *gofish.APIClient
+	clientConfig *gofish.ClientConfig
+	service      *gofish.Service
+	sessionID    *string
 }
 
-// New returns a new Ilo ready to be used
+// New returns a new RedFish instance ready for use
 func New(ip string, username string, password string) (r *RedFish, err error) {
+
 	client, err := httpclient.Build()
 	if err != nil {
 		return r, err
 	}
 
-	apiClient, err := gofish.APIClient(fmt.Sprintf("https://%s", ip), client)
-	if err != nil {
-		return r, err
+	config := &gofish.ClientConfig{
+		Username:   username,
+		Password:   password,
+		Endpoint:   "https://" + ip,
+		HTTPClient: client,
 	}
 
-	return &RedFish{ip: ip, username: username, password: password, apiClient: apiClient}, err
+	return &RedFish{clientConfig: config, ip: ip}, err
 }
 
 // CheckCredentials verify whether the credentials are valid or not
@@ -141,6 +144,35 @@ func (r *RedFish) Version() (version string, err error) {
 	return version, err
 }
 
+// Vendor returns the vendor of the bmc we are running
+func (r *RedFish) Vendor() (vendor string, err error) {
+	err = r.httpLogin()
+	if err != nil {
+		return vendor, err
+	}
+
+	return r.service.Vendor, nil
+}
+
+// IsOn tells if a machine is currently powered on
+func (r *RedFish) IsOn() (status bool, err error) {
+	err = r.httpLogin()
+	if err != nil {
+		return status, err
+	}
+
+	managers, err := r.service.Managers()
+	if err != nil {
+		return status, err
+	}
+
+	if len(managers) < 1 {
+		return status, fmt.Errorf("No managers found in service root")
+	}
+
+	return true, nil
+}
+
 // Name returns the version of the bmc we are running
 func (r *RedFish) Name() (name string, err error) {
 	err = r.httpLogin()
@@ -215,7 +247,7 @@ func (r *RedFish) CPU() (cpu string, cpuCount int, coreCount int, hyperthreadCou
 
 	for _, e := range entries {
 		if e.SystemType == "Physical" {
-			return e.ProcessorSummary.Model, e.ProcessorSummary.Count, err
+			return e.ProcessorSummary.Model, e.ProcessorSummary.Count, 0, 0, err
 		}
 	}
 	return cpu, cpuCount, coreCount, hyperthreadCount, err

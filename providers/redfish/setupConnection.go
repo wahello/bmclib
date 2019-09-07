@@ -2,13 +2,19 @@ package redfish
 
 import (
 	log "github.com/sirupsen/logrus"
-	gofish "github.com/stmcginnis/gofish/school"
+	"github.com/stmcginnis/gofish"
 )
 
-// httpLogin initiates the connection to a bmc device
+// HttpLogin initiates the connection to a bmc device
 func (r *RedFish) httpLogin() (err error) {
+
 	if r.sessionID != nil && r.service != nil {
-		return
+		return nil
+	}
+
+	r.apiClient, err = gofish.Connect(*r.clientConfig)
+	if err != nil {
+		return err
 	}
 
 	service, err := gofish.ServiceRoot(r.apiClient)
@@ -16,20 +22,20 @@ func (r *RedFish) httpLogin() (err error) {
 		return err
 	}
 
-	auth, err := service.CreateSession(r.username, r.password)
+	auth, err := service.CreateSession(r.clientConfig.Username, r.clientConfig.Password)
 	if err != nil {
 		return err
 	}
 
-	log.WithFields(log.Fields{"step": "bmc connection", "provider": "redfish", "ip": i.ip}).Debug("connecting to bmc")
+	log.WithFields(log.Fields{"step": "bmc connection", "provider": "redfish", "ip": r.ip}).Debug("connecting to bmc")
 
-	r.apiClient.Token = auth.Token
 	r.service = service
 	r.sessionID = &auth.Session
 
 	return err
 }
 
+// Close closes the current session
 func (r *RedFish) Close() (err error) {
 	if r.sessionID != nil && r.service != nil {
 		return r.service.DeleteSession(*r.sessionID)
