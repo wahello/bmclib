@@ -18,7 +18,6 @@ type RedFish struct {
 	apiClient    *gofish.APIClient
 	clientConfig *gofish.ClientConfig
 	service      *gofish.Service
-	sessionID    *string
 }
 
 // New returns a new RedFish instance ready for use
