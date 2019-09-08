@@ -156,21 +156,28 @@ func (r *RedFish) Vendor() (vendor string, err error) {
 
 // IsOn tells if a machine is currently powered on
 func (r *RedFish) IsOn() (status bool, err error) {
+
 	err = r.httpLogin()
 	if err != nil {
 		return status, err
 	}
 
-	managers, err := r.service.Managers()
+	entries, err := r.service.Systems()
 	if err != nil {
 		return status, err
 	}
 
-	if len(managers) < 1 {
-		return status, fmt.Errorf("No managers found in service root")
+	if len(entries) < 1 {
+		return status, fmt.Errorf("No system entries present")
 	}
 
-	return true, nil
+	for _, e := range entries {
+		if e.SystemType == "Physical" && e.PowerState == "On" {
+			return true, nil
+		}
+	}
+
+	return false, nil
 }
 
 // Name returns the version of the bmc we are running
@@ -251,4 +258,56 @@ func (r *RedFish) CPU() (cpu string, cpuCount int, coreCount int, hyperthreadCou
 		}
 	}
 	return cpu, cpuCount, coreCount, hyperthreadCount, err
+}
+
+// BiosVersion returns the current version of the bios
+func (r *RedFish) BiosVersion() (version string, err error) {
+	err = r.httpLogin()
+	if err != nil {
+		return version, err
+	}
+
+	entries, err := r.service.Systems()
+	if err != nil {
+		return version, err
+	}
+
+	if len(entries) < 1 {
+		return version, fmt.Errorf("No system entries present")
+	}
+
+	for _, e := range entries {
+		if e.SystemType == "Physical" {
+			return e.BIOSVersion, nil
+		}
+	}
+
+	return version, nil
+}
+
+// PowerState returns the current power state of the machine
+func (r *RedFish) PowerState() (state string, err error) {
+
+	err = r.httpLogin()
+	if err != nil {
+		return state, err
+	}
+
+	entries, err := r.service.Systems()
+	if err != nil {
+		return state, err
+	}
+
+	if len(entries) < 1 {
+		return state, fmt.Errorf("No system entries present")
+	}
+
+	for _, e := range entries {
+		if e.SystemType == "Physical" {
+			return string(e.PowerState), nil
+		}
+	}
+
+	return state, nil
+
 }

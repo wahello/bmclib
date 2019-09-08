@@ -17,7 +17,7 @@ func (r *RedFish) httpLogin() (err error) {
 		return err
 	}
 
-	service, err := gofish.ServiceRoot(r.apiClient)
+	service := r.apiClient.Service
 	if err != nil {
 		return err
 	}
