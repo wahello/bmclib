@@ -1,38 +1,37 @@
 package redfish
 
 import (
+	"fmt"
+
 	log "github.com/sirupsen/logrus"
-	gofish "github.com/stmcginnis/gofish/school"
+	"github.com/stmcginnis/gofish"
 )
 
-// httpLogin initiates the connection to a bmc device
+// HttpLogin initiates the redfish connection to the device
 func (r *RedFish) httpLogin() (err error) {
-	if r.sessionID != nil && r.service != nil {
-		return
+
+	if r.service != nil {
+		return nil
 	}
 
-	service, err := gofish.ServiceRoot(r.apiClient)
+	log.WithFields(log.Fields{"step": "bmc connection", "provider": "redfish", "ip": r.ip}).Debug("connecting to bmc")
+
+	r.apiClient, err = gofish.Connect(*r.clientConfig)
 	if err != nil {
 		return err
 	}
 
-	auth, err := service.CreateSession(r.username, r.password)
-	if err != nil {
-		return err
-	}
+	r.service = r.apiClient.Service
 
-	log.WithFields(log.Fields{"step": "bmc connection", "provider": "redfish", "ip": i.ip}).Debug("connecting to bmc")
-
-	r.apiClient.Token = auth.Token
-	r.service = service
-	r.sessionID = &auth.Session
-
-	return err
+	return nil
 }
 
+// Close logs out of the device
 func (r *RedFish) Close() (err error) {
-	if r.sessionID != nil && r.service != nil {
-		return r.service.DeleteSession(*r.sessionID)
+
+	if r.service != nil {
+		r.apiClient.Logout()
 	}
-	return err
+
+	return fmt.Errorf("Attempt to close an invalid connection")
 }
