@@ -19,10 +19,10 @@ func TestNew1(t *testing.T) {
 	tests := []struct {
 		name    string
 		args    args
-		wantR   *RedFish
+		wantR   *Redfish
 		wantErr bool
 	}{
-		{name: "TestNew", args: expected, wantR: &RedFish{ip: expected.ip, clientConfig: &gofish.ClientConfig{}}},
+		{name: "TestNew", args: expected, wantR: &Redfish{ip: expected.ip, clientConfig: &gofish.ClientConfig{}}},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -34,7 +34,7 @@ func TestNew1(t *testing.T) {
 			}
 
 			if gotR == nil {
-				t.Errorf("expected a *RedFish, got nil")
+				t.Errorf("expected a *Redfish, got nil")
 			}
 
 			if gotR.clientConfig.HTTPClient == nil {
@@ -46,7 +46,7 @@ func TestNew1(t *testing.T) {
 			}
 
 			if gotR.ip != expected.ip {
-				t.Errorf("expected IP in RedFish instance - %s got %s", expected.ip, gotR.ip)
+				t.Errorf("expected IP in Redfish instance - %s got %s", expected.ip, gotR.ip)
 			}
 
 			if gotR.clientConfig.Username != expected.username {

@@ -1,7 +1,6 @@
 package redfish
 
 import (
-	"fmt"
 	"strings"
 
 	"github.com/bmc-toolbox/bmclib/internal/httpclient"
@@ -11,17 +10,17 @@ import (
 	_ "github.com/bmc-toolbox/bmclib/logging"
 )
 
-// RedFish holds the status and properties of a connection to an Redfish service
+// Redfish holds the status and properties of a connection to an Redfish service
 // it wraps the gofish.APIClient
-type RedFish struct {
+type Redfish struct {
 	ip           string
 	apiClient    *gofish.APIClient
 	clientConfig *gofish.ClientConfig
 	service      *gofish.Service
 }
 
-// New returns a new RedFish instance ready for use
-func New(ip string, username string, password string) (r *RedFish, err error) {
+// New returns a new Redfish instance ready for use
+func New(ip string, username string, password string) (r *Redfish, err error) {
 
 	client, err := httpclient.Build()
 	if err != nil {
@@ -35,16 +34,16 @@ func New(ip string, username string, password string) (r *RedFish, err error) {
 		HTTPClient: client,
 	}
 
-	return &RedFish{clientConfig: config, ip: ip}, err
+	return &Redfish{clientConfig: config, ip: ip}, err
 }
 
 // CheckCredentials verify whether the credentials are valid or not
-func (r *RedFish) CheckCredentials() (err error) {
+func (r *Redfish) CheckCredentials() (err error) {
 	return r.httpLogin()
 }
 
 // Serial returns the device serial
-func (r *RedFish) Serial() (serial string, err error) {
+func (r *Redfish) Serial() (serial string, err error) {
 	err = r.httpLogin()
 	if err != nil {
 		return serial, err
@@ -64,7 +63,7 @@ func (r *RedFish) Serial() (serial string, err error) {
 }
 
 // ChassisSerial returns the serial number of the chassis where the blade is attached
-func (r *RedFish) ChassisSerial() (serial string, err error) {
+func (r *Redfish) ChassisSerial() (serial string, err error) {
 	err = r.httpLogin()
 	if err != nil {
 		return serial, err
@@ -84,7 +83,7 @@ func (r *RedFish) ChassisSerial() (serial string, err error) {
 }
 
 // Model returns the device model
-func (r *RedFish) Model() (model string, err error) {
+func (r *Redfish) Model() (model string, err error) {
 	err = r.httpLogin()
 	if err != nil {
 		return model, err
@@ -104,7 +103,7 @@ func (r *RedFish) Model() (model string, err error) {
 }
 
 // HardwareType returns the type of bmc we are talking to
-func (r *RedFish) HardwareType() (model string, err error) {
+func (r *Redfish) HardwareType() (model string, err error) {
 	err = r.httpLogin()
 	if err != nil {
 		return model, err
@@ -124,7 +123,7 @@ func (r *RedFish) HardwareType() (model string, err error) {
 }
 
 // Version returns the version of the bmc we are running
-func (r *RedFish) Version() (version string, err error) {
+func (r *Redfish) Version() (version string, err error) {
 	err = r.httpLogin()
 	if err != nil {
 		return version, err
@@ -144,7 +143,7 @@ func (r *RedFish) Version() (version string, err error) {
 }
 
 // Vendor returns the vendor of the bmc we are running
-func (r *RedFish) Vendor() (vendor string, err error) {
+func (r *Redfish) Vendor() (vendor string, err error) {
 	err = r.httpLogin()
 	if err != nil {
 		return vendor, err
@@ -154,7 +153,7 @@ func (r *RedFish) Vendor() (vendor string, err error) {
 }
 
 // IsOn tells if a machine is currently powered on
-func (r *RedFish) IsOn() (status bool, err error) {
+func (r *Redfish) IsOn() (status bool, err error) {
 
 	err = r.httpLogin()
 	if err != nil {
@@ -167,7 +166,7 @@ func (r *RedFish) IsOn() (status bool, err error) {
 	}
 
 	if len(entries) < 1 {
-		return status, fmt.Errorf("No system entries present")
+		return status, ErrNoSystemEntry
 	}
 
 	for _, e := range entries {
@@ -180,7 +179,7 @@ func (r *RedFish) IsOn() (status bool, err error) {
 }
 
 // Name returns the version of the bmc we are running
-func (r *RedFish) Name() (name string, err error) {
+func (r *Redfish) Name() (name string, err error) {
 	err = r.httpLogin()
 	if err != nil {
 		return name, err
@@ -200,7 +199,7 @@ func (r *RedFish) Name() (name string, err error) {
 }
 
 // Status returns health string status from the bmc
-func (r *RedFish) Status() (status string, err error) {
+func (r *Redfish) Status() (status string, err error) {
 	err = r.httpLogin()
 	if err != nil {
 		return status, err
@@ -220,7 +219,7 @@ func (r *RedFish) Status() (status string, err error) {
 }
 
 // Memory returns the total amount of memory of the server
-func (r *RedFish) Memory() (memory int, err error) {
+func (r *Redfish) Memory() (memory int, err error) {
 	err = r.httpLogin()
 	if err != nil {
 		return memory, err
@@ -240,7 +239,7 @@ func (r *RedFish) Memory() (memory int, err error) {
 }
 
 // CPU returns the cpu, cores and hyperthreads of the server
-func (r *RedFish) CPU() (cpu string, cpuCount int, coreCount int, hyperthreadCount int, err error) {
+func (r *Redfish) CPU() (cpu string, cpuCount int, coreCount int, hyperthreadCount int, err error) {
 	err = r.httpLogin()
 	if err != nil {
 		return cpu, cpuCount, coreCount, hyperthreadCount, err
@@ -260,7 +259,7 @@ func (r *RedFish) CPU() (cpu string, cpuCount int, coreCount int, hyperthreadCou
 }
 
 // BiosVersion returns the current version of the bios
-func (r *RedFish) BiosVersion() (version string, err error) {
+func (r *Redfish) BiosVersion() (version string, err error) {
 	err = r.httpLogin()
 	if err != nil {
 		return version, err
@@ -272,7 +271,7 @@ func (r *RedFish) BiosVersion() (version string, err error) {
 	}
 
 	if len(entries) < 1 {
-		return version, fmt.Errorf("No system entries present")
+		return version, ErrNoSystemEntry
 	}
 
 	for _, e := range entries {
@@ -285,7 +284,7 @@ func (r *RedFish) BiosVersion() (version string, err error) {
 }
 
 // PowerState returns the current power state of the machine
-func (r *RedFish) PowerState() (state string, err error) {
+func (r *Redfish) PowerState() (state string, err error) {
 
 	err = r.httpLogin()
 	if err != nil {
@@ -298,7 +297,7 @@ func (r *RedFish) PowerState() (state string, err error) {
 	}
 
 	if len(entries) < 1 {
-		return state, fmt.Errorf("No system entries present")
+		return state, ErrNoSystemEntry
 	}
 
 	for _, e := range entries {
@@ -308,5 +307,37 @@ func (r *RedFish) PowerState() (state string, err error) {
 	}
 
 	return state, nil
+}
 
+// PowerKw returns the current power usage in Kw
+func (r *Redfish) PowerKw() (power float64, err error) {
+	err = r.httpLogin()
+	if err != nil {
+		return power, err
+	}
+
+	entries, err := r.service.Chassis()
+	if err != nil {
+		return power, err
+	}
+
+	if len(entries) < 1 {
+		return power, ErrNoSystemEntry
+	}
+
+	for _, entry := range entries {
+		e, err := entry.Power()
+		if err != nil {
+			return power, err
+		}
+
+		// This means we can't collect data from this device or part
+		if e == nil || len(e.PowerControl) == 0 {
+			continue
+		}
+
+		return float64(e.PowerControl[0].PowerConsumedWatts) / 1024, err
+	}
+
+	return power, err
 }

@@ -8,7 +8,7 @@ import (
 )
 
 // HttpLogin initiates the redfish connection to the device
-func (r *RedFish) httpLogin() (err error) {
+func (r *Redfish) httpLogin() (err error) {
 
 	if r.service != nil {
 		return nil
@@ -27,7 +27,7 @@ func (r *RedFish) httpLogin() (err error) {
 }
 
 // Close logs out of the device
-func (r *RedFish) Close() (err error) {
+func (r *Redfish) Close() (err error) {
 
 	if r.service != nil {
 		r.apiClient.Logout()
