@@ -152,32 +152,6 @@ func (r *Redfish) Vendor() (vendor string, err error) {
 	return r.service.Vendor, nil
 }
 
-// IsOn tells if a machine is currently powered on
-func (r *Redfish) IsOn() (status bool, err error) {
-
-	err = r.httpLogin()
-	if err != nil {
-		return status, err
-	}
-
-	entries, err := r.service.Systems()
-	if err != nil {
-		return status, err
-	}
-
-	if len(entries) < 1 {
-		return status, ErrNoSystemEntry
-	}
-
-	for _, e := range entries {
-		if e.SystemType == "Physical" && e.PowerState == "On" {
-			return true, nil
-		}
-	}
-
-	return false, nil
-}
-
 // Name returns the version of the bmc we are running
 func (r *Redfish) Name() (name string, err error) {
 	err = r.httpLogin()
