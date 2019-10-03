@@ -8,6 +8,7 @@ type Chassis struct {
 	Blades            []*Blade
 	StorageBlades     []*StorageBlade
 	Fans              []*Fan
+	FanRequests       []*FanRequest
 	Nics              []*Nic
 	Psus              []*Psu
 	PsuRedundancyMode string

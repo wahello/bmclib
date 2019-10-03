@@ -86,6 +86,7 @@ type CmcCollection interface {
 	FindBladePosition(string) (int, error)
 	Version() (string, error)
 	Fans() ([]*Fan, error)
+	FanRequests() ([]*FanRequest, error)
 	IsActive() bool
 	IsOn() (bool, error)
 	IsOnBlade(int) (bool, error)
