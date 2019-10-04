@@ -191,6 +191,45 @@ func (m *M1000e) Fans() (fans []*devices.Fan, err error) {
 	return fans, err
 }
 
+// FanRequests returns list of fan requests from each blade within the chassis
+func (m *M1000e) FanRequests() (fanRequests []*devices.FanRequest, err error) {
+	err = m.sshLogin()
+	if err != nil {
+		return fanRequests, err
+	}
+
+	output, err := m.sshClient.Run("getfanreqinfo")
+	if err != nil {
+		return fanRequests, fmt.Errorf(output)
+	}
+
+	fanRequests = make([]*devices.FanRequest, 0)
+
+	for _, line := range strings.Split(output, "\n") {
+		if strings.Contains(line, "Present") && !strings.Contains(line, "Not") && !strings.Contains(line, "Switch") {
+			fields := strings.Fields(line)
+			percentage, err := strconv.Atoi(fields[len(fields)-1])
+			if err != nil {
+				percentage = -1
+			}
+
+			position, err := strconv.Atoi(fields[0])
+			if err != nil {
+				percentage = -1
+			}
+
+			fanRequest := &devices.FanRequest{
+				Position:   position,
+				Percentage: percentage,
+			}
+
+			fanRequests = append(fanRequests, fanRequest)
+		}
+	}
+
+	return fanRequests, nil
+}
+
 // Status returns health string status from the bmc
 func (m *M1000e) Status() (status string, err error) {
 	err = m.httpLogin()

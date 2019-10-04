@@ -103,6 +103,40 @@ var (
 			Please wait for up to a few minutes before performing additional power
 			related actions (eg. reset, powerdown) on the affected hardware.
 			`),
+		"getfanreqinfo": []byte(`[Ambient Temperature Fan Request %]
+			38
+
+			[Server Module Fan Request Table]
+			<Slot#>   <Server Name>   <Blade Type>       <Power State>  <Presence>   <Fan Request%>
+			1         bbmi            PowerEdge M630     OFF            Present      0
+			2         xxx             PowerEdge M630     ON             Present      50
+			3         xxx             PowerEdge M630     ON             Present      50
+			4         xxx             PowerEdge M630     ON             Present      50
+			5         SLOT-05         N/A                N/A            Not Present  N/A
+			6         xxx             PowerEdge M630     ON             Present      57
+			7         xxx             PowerEdge M630     ON             Present      50
+			8         xxx             PowerEdge M630     ON             Present      50
+			9         xxx             PowerEdge M630     ON             Present      50
+			10        xxx             PowerEdge M630     ON             Present      50
+			11        SLOT-11         N/A                N/A            Not Present  N/A
+			12        xxx             PowerEdge M630     ON             Present      74
+			13        SLOT-13         N/A                N/A            Not Present  N/A
+			14        SLOT-14         N/A                N/A            Not Present  N/A
+			15        SLOT-15         N/A                N/A            Not Present  N/A
+			16        SLOT-16         N/A                N/A            Not Present  N/A
+
+			[Switch Module Fan Request Table]
+			<IO>      <Name>                           <Type>             <Presence>   <Fan Request%>
+			Switch-1  Dell 10GbE KR PTM                10 GbE (KR only)   Present      30
+			Switch-2  N/A                              None               Not Present  N/A
+			Switch-3  N/A                              None               Not Present  N/A
+			Switch-4  N/A                              None               Not Present  N/A
+			Switch-5  N/A                              None               Not Present  N/A
+			Switch-6  N/A                              None               Not Present  N/A
+			
+			[Enhanced Cooling Mode]
+			Enhanced Cooling Mode(ECM) Status          = Disabled.
+			`),
 	}
 )
 

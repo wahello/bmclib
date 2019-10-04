@@ -2065,6 +2065,77 @@ func TestChassisFans(t *testing.T) {
 	tearDown()
 }
 
+func TestChassisFanRequests(t *testing.T) {
+	expectedAnswer := []*devices.FanRequest{
+		{
+			Position:   1,
+			Percentage: 0,
+		},
+		{
+			Position:   2,
+			Percentage: 50,
+		},
+		{
+			Position:   3,
+			Percentage: 50,
+		},
+		{
+			Position:   4,
+			Percentage: 50,
+		},
+		{
+			Position:   6,
+			Percentage: 57,
+		},
+		{
+			Position:   7,
+			Percentage: 50,
+		},
+		{
+			Position:   8,
+			Percentage: 50,
+		},
+		{
+			Position:   9,
+			Percentage: 50,
+		},
+		{
+			Position:   10,
+			Percentage: 50,
+		},
+		{
+			Position:   12,
+			Percentage: 74,
+		},
+	}
+
+	bmc, err := setupSSH()
+	if err != nil {
+		t.Fatalf("Found errors during the test setup %v", err)
+	}
+	defer tearDownSSH()
+
+	fanRequests, err := bmc.FanRequests()
+	if err != nil {
+		t.Fatalf("Found errors calling bmc.FanRequests %#v", err)
+	}
+
+	for _, fanRequest := range fanRequests {
+		found := false
+		for _, ef := range expectedAnswer {
+			if fanRequest.Position == ef.Position {
+				found = true
+				if fanRequest.Percentage != ef.Percentage {
+					t.Errorf("Expected answer %v: found %v", ef, fanRequest)
+				}
+			}
+		}
+		if !found {
+			t.Errorf("Unable to find a match for %v", fanRequest)
+		}
+	}
+}
+
 func TestChassisInterface(t *testing.T) {
 	chassis, err := setup()
 	if err != nil {
