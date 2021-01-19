@@ -20,10 +20,12 @@ var _ devices.Configure = (*Ilo)(nil)
 func (i *Ilo) Resources() []string {
 	return []string{
 		"user",
+		"purge_unmanaged_users",
 		"syslog",
 		"license",
 		"ntp",
 		"ldap_group",
+		"purge_unmanaged_ldap_groups",
 		"ldap",
 		"network",
 		"power",
@@ -215,6 +217,81 @@ func (i *Ilo) User(users []*cfgresources.User) (err error) {
 				"User", user.Name,
 			)
 
+		}
+	}
+
+	return err
+}
+
+// PurgeUnmanagedUsers purges any user not in the user configuration.
+// PurgeUnmanagedUsers implements the Configure interface.
+func (i *Ilo) PurgeUnmanagedUsers(users []*cfgresources.User) (err error) {
+
+	var managedUser map[string]bool
+	for _, user := range users {
+		managedUser[user.Name] = true
+	}
+
+	existingUsers, err := i.queryUsers()
+	if err != nil {
+		msg := "Unable to query existing users"
+		i.log.V(1).Info(msg,
+			"IP", i.ip,
+			"Model", i.HardwareType(),
+			"step", "applyUserParams",
+			"Error", internal.ErrStringOrEmpty(err),
+		)
+		return errors.New(msg)
+	}
+
+	for _, userinfo := range existingUsers {
+		if !managedUser[userinfo.LoginName] {
+			userinfo.SessionKey = i.sessionKey
+
+			userinfo.Method = "del_user"
+			userinfo.UserID = userinfo.ID
+			msg := "User is unmanaged, will be deleted."
+			i.log.V(1).Info(msg,
+				"IP", i.ip,
+				"Model", i.HardwareType(),
+				"User", userinfo.LoginName,
+			)
+
+			payload, err := json.Marshal(userinfo)
+			if err != nil {
+				msg := "Unable to marshal userInfo payload to delete user."
+				i.log.V(1).Info(msg,
+					"IP", i.ip,
+					"Model", i.HardwareType(),
+					"step", helper.WhosCalling(),
+					"User", userinfo.LoginName,
+					"Error", internal.ErrStringOrEmpty(err),
+				)
+				continue
+			}
+
+			endpoint := "json/user_info"
+			statusCode, response, err := i.post(endpoint, payload)
+			if err != nil || statusCode != 200 {
+				msg := "POST request to delete user returned error."
+				i.log.V(1).Info(msg,
+					"IP", i.ip,
+					"Model", i.HardwareType(),
+					"endpoint", endpoint,
+					"step", helper.WhosCalling(),
+					"User", userinfo.LoginName,
+					"StatusCode", statusCode,
+					"response", string(response),
+					"Error", internal.ErrStringOrEmpty(err),
+				)
+				continue
+			}
+
+			i.log.V(1).Info("User was deleted.",
+				"IP", i.ip,
+				"Model", i.HardwareType(),
+				"User", userinfo.LoginName,
+			)
 		}
 	}
 
@@ -565,6 +642,12 @@ func (i *Ilo) LdapGroup(cfg []*cfgresources.LdapGroup, cfgLdap *cfgresources.Lda
 	}
 
 	return err
+}
+
+// PurgeUnmanagedLdapGroups purges any group not in the ldapGroup configuration.
+// PurgeUnmanagedLdapGroups implements the Configure interface.
+func (i *Ilo) PurgeUnmanagedLdapGroups(cfg []*cfgresources.LdapGroup, cfgLdap *cfgresources.Ldap) (err error) {
+	return nil
 }
 
 // Ldap applies LDAP configuration params.

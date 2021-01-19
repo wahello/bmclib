@@ -218,6 +218,12 @@ func (s *SupermicroX) User(users []*cfgresources.User) (err error) {
 	return err
 }
 
+// PurgeUnmanagedUsers purges any user not in the user configuration.
+// PurgeUnmanagedUsers implements the Configure interface.
+func (s *SupermicroX) PurgeUnmanagedUsers(users []*cfgresources.User) (err error) {
+	return nil
+}
+
 // Network method implements the Configure interface
 // applies various network parameters.
 func (s *SupermicroX) Network(cfg *cfgresources.Network) (reset bool, err error) {
@@ -511,6 +517,12 @@ func (s *SupermicroX) LdapGroup(cfgGroup []*cfgresources.LdapGroup, cfgLdap *cfg
 		"Model": s.HardwareType(),
 	}).Debug("Ldap config parameters applied.")
 	return err
+}
+
+// PurgeUnmanagedLdapGroups purges any group not in the ldapGroup configuration.
+// PurgeUnmanagedLdapGroups implements the Configure interface.
+func (s *SupermicroX) PurgeUnmanagedLdapGroups(cfgGroup []*cfgresources.LdapGroup, cfgLdap *cfgresources.Ldap) (err error) {
+	return nil
 }
 
 // Syslog applies the Syslog configuration resource

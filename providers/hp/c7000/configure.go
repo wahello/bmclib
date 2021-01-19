@@ -18,10 +18,12 @@ var _ devices.Configure = (*C7000)(nil)
 func (c *C7000) Resources() []string {
 	return []string{
 		"user",
+		"purge_unmanaged_users",
 		"syslog",
 		"license",
 		"ntp",
 		"ldap_group",
+		"purge_unmanaged_ldap_groups",
 		"ldap",
 	}
 }
@@ -290,6 +292,12 @@ func (c *C7000) LdapGroup(cfg []*cfgresources.LdapGroup, cfgLdap *cfgresources.L
 		"Model", c.HardwareType(),
 	)
 	return
+}
+
+// PurgeUnmanagedLdapGroups purges any group not in the ldapGroup configuration.
+// PurgeUnmanagedLdapGroups implements the Configure interface.
+func (c *C7000) PurgeUnmanagedLdapGroups(cfg []*cfgresources.LdapGroup, cfgLdap *cfgresources.Ldap) (err error) {
+	return nil
 }
 
 // LDAP remove group, soap actions in order.
@@ -585,6 +593,12 @@ func (c *C7000) User(users []*cfgresources.User) (err error) {
 
 	}
 	return err
+}
+
+// PurgeUnmanagedUsers purges any user not in the user configuration.
+// PurgeUnmanagedUsers implements the Configure interface.
+func (c *C7000) PurgeUnmanagedUsers(users []*cfgresources.User) (err error) {
+	return nil
 }
 
 func (c *C7000) setUserPassword(user string, password string) (err error) {

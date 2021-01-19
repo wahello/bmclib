@@ -14,18 +14,20 @@ type SetupChassis struct {
 
 // ResourcesConfig struct holds all the configuration to be applied.
 type ResourcesConfig struct {
-	Ldap         *Ldap         `yaml:"ldap"`
-	LdapGroup    []*LdapGroup  `yaml:"ldapGroup"`
-	License      *License      `yaml:"license"`
-	Network      *Network      `yaml:"network"`
-	Syslog       *Syslog       `yaml:"syslog"`
-	User         []*User       `yaml:"user"`
-	HTTPSCert    *HTTPSCert    `yaml:"httpsCert"`
-	Ntp          *Ntp          `yaml:"ntp"`
-	Bios         *Bios         `yaml:"bios"`
-	Power        *Power        `yaml:"power"`
-	Supermicro   *Supermicro   `yaml:"supermicro"` //supermicro specific config, example of issue #34
-	SetupChassis *SetupChassis `yaml:"setupChassis"`
+	Ldap                     *Ldap         `yaml:"ldap"`
+	LdapGroup                []*LdapGroup  `yaml:"ldapGroup"`
+	PurgeUnmanagedLdapGroups bool          `yaml:"purgeUnmanagedLdapGroups"`
+	License                  *License      `yaml:"license"`
+	Network                  *Network      `yaml:"network"`
+	Syslog                   *Syslog       `yaml:"syslog"`
+	User                     []*User       `yaml:"user"`
+	PurgeUnmanagedUsers      bool          `yaml:"purgeUnmanagedUsers"`
+	HTTPSCert                *HTTPSCert    `yaml:"httpsCert"`
+	Ntp                      *Ntp          `yaml:"ntp"`
+	Bios                     *Bios         `yaml:"bios"`
+	Power                    *Power        `yaml:"power"`
+	Supermicro               *Supermicro   `yaml:"supermicro"` //supermicro specific config, example of issue #34
+	SetupChassis             *SetupChassis `yaml:"setupChassis"`
 }
 
 // Power struct holds Power settings configuration for each vendor.

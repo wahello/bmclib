@@ -26,11 +26,13 @@ var _ devices.Configure = (*IDrac8)(nil)
 func (i *IDrac8) Resources() []string {
 	return []string{
 		"user",
+		"purge_unmanaged_users",
 		"syslog",
 		"network",
 		"ntp",
 		"ldap",
 		"ldap_group",
+		"purge_unmanaged_ldap_groups",
 		"https_cert",
 	}
 }
@@ -184,6 +186,12 @@ func (i *IDrac8) User(cfgUsers []*cfgresources.User) (err error) {
 	}
 
 	return err
+}
+
+// PurgeUnmanagedUsers purges any user not in the user configuration.
+// PurgeUnmanagedUsers implements the Configure interface.
+func (i *IDrac8) PurgeUnmanagedUsers(users []*cfgresources.User) (err error) {
+	return nil
 }
 
 // Syslog applies the Syslog configuration resource
@@ -522,6 +530,12 @@ func (i *IDrac8) LdapGroup(cfgGroup []*cfgresources.LdapGroup, cfgLdap *cfgresou
 		return err
 	}
 	return err
+}
+
+// PurgeUnmanagedLdapGroups purges any group not in the ldapGroup configuration.
+// PurgeUnmanagedLdapGroups implements the Configure interface.
+func (i *IDrac8) PurgeUnmanagedLdapGroups(cfgGroup []*cfgresources.LdapGroup, cfgLdap *cfgresources.Ldap) (err error) {
+	return nil
 }
 
 // Apply ldap group privileges

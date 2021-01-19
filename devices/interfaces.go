@@ -121,10 +121,12 @@ type CmcSetup interface {
 type Configure interface {
 	Resources() []string
 	User([]*cfgresources.User) error // UserCreator, UserUpdater, UserDeleter, UserReader
+	PurgeUnmanagedUsers([]*cfgresources.User) error
 	Syslog(*cfgresources.Syslog) error
 	Ntp(*cfgresources.Ntp) error
 	Ldap(*cfgresources.Ldap) error
 	LdapGroup([]*cfgresources.LdapGroup, *cfgresources.Ldap) error
+	PurgeUnmanagedLdapGroups([]*cfgresources.LdapGroup, *cfgresources.Ldap) error
 	Network(*cfgresources.Network) (bool, error)
 	SetLicense(*cfgresources.License) error
 	Bios(*cfgresources.Bios) error

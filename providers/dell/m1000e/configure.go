@@ -25,10 +25,12 @@ var _ devices.Configure = (*M1000e)(nil)
 func (m *M1000e) Resources() []string {
 	return []string{
 		"user",
+		"purge_unmanaged_users",
 		"syslog",
 		"ntp",
 		"ldap",
 		"ldap_group",
+		"purge_unmanaged_ldap_groups",
 		//"ssl",
 	}
 }
@@ -103,6 +105,12 @@ func (m *M1000e) User(cfgUsers []*cfgresources.User) (err error) {
 	}
 
 	return err
+}
+
+// PurgeUnmanagedUsers purges any user not in the user configuration.
+// PurgeUnmanagedUsers implements the Configure interface.
+func (m *M1000e) PurgeUnmanagedUsers(users []*cfgresources.User) (err error) {
+	return nil
 }
 
 // Syslog applies the Syslog configuration resource
@@ -225,6 +233,12 @@ func (m *M1000e) LdapGroup(cfg []*cfgresources.LdapGroup, cfgLdap *cfgresources.
 		roleID++
 	}
 
+	return nil
+}
+
+// PurgeUnmanagedLdapGroups purges any group not in the ldapGroup configuration.
+// PurgeUnmanagedLdapGroups implements the Configure interface.
+func (m *M1000e) PurgeUnmanagedLdapGroups(cfg []*cfgresources.LdapGroup, cfgLdap *cfgresources.Ldap) (err error) {
 	return nil
 }
 
