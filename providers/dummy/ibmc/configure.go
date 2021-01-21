@@ -11,10 +11,12 @@ import (
 func (i *Ibmc) Resources() []string {
 	return []string{
 		"user",
+		"purge_unmanaged_users",
 		"syslog",
 		"ntp",
 		"ldap",
 		"ldap_group",
+		"purge_unmanaged_ldap_groups",
 		"network",
 	}
 }
@@ -26,6 +28,11 @@ func (i *Ibmc) Power(cfg *cfgresources.Power) (err error) {
 
 // User method implements the Configure interface
 func (i *Ibmc) User(cfg []*cfgresources.User) error {
+	return nil
+}
+
+// PurgeUnmanagedUsers method implements the Configure interface
+func (i *Ibmc) PurgeUnmanagedUsers(cfg []*cfgresources.User) error {
 	return nil
 }
 
@@ -46,6 +53,11 @@ func (i *Ibmc) Ldap(cfg *cfgresources.Ldap) error {
 
 // LdapGroup method implements the Configure interface
 func (i *Ibmc) LdapGroup(cfgGroup []*cfgresources.LdapGroup, cfgLdap *cfgresources.Ldap) error {
+	return nil
+}
+
+// PurgeUnmanagedLdapGroups method implements the Configure interface
+func (i *Ibmc) PurgeUnmanagedLdapGroups(cfgGroup []*cfgresources.LdapGroup, cfgLdap *cfgresources.Ldap) error {
 	return nil
 }
 
