@@ -227,7 +227,7 @@ func (i *Ilo) User(users []*cfgresources.User) (err error) {
 // PurgeUnmanagedUsers implements the Configure interface.
 func (i *Ilo) PurgeUnmanagedUsers(users []*cfgresources.User) (err error) {
 
-	var managedUser map[string]bool
+	managedUser := make(map[string]bool)
 	for _, user := range users {
 		managedUser[user.Name] = true
 	}
@@ -647,7 +647,71 @@ func (i *Ilo) LdapGroup(cfg []*cfgresources.LdapGroup, cfgLdap *cfgresources.Lda
 // PurgeUnmanagedLdapGroups purges any group not in the ldapGroup configuration.
 // PurgeUnmanagedLdapGroups implements the Configure interface.
 func (i *Ilo) PurgeUnmanagedLdapGroups(cfg []*cfgresources.LdapGroup, cfgLdap *cfgresources.Ldap) (err error) {
-	return nil
+	mangedGroup := make(map[string]bool)
+	for _, group := range cfg {
+		mangedGroup[group.Group] = true
+	}
+
+	existingGroups, err := i.queryDirectoryGroups()
+	if err != nil {
+		msg := "Unable to query existing Ldap groups"
+		i.log.V(1).Info(msg,
+			"IP", i.ip,
+			"Model", i.HardwareType(),
+			"step", helper.WhosCalling(),
+			"Error", internal.ErrStringOrEmpty(err),
+		)
+		return errors.New(msg)
+	}
+
+	for _, group := range existingGroups {
+		if !mangedGroup[group.Dn] {
+			group.SessionKey = i.sessionKey
+			group.Method = "del_group"
+
+			i.log.V(1).Info("group is unmanaged, will be deleted.",
+				"IP", i.ip,
+				"Model", i.HardwareType(),
+				"Group", group.Dn,
+			)
+
+			payload, err := json.Marshal(group)
+			if err != nil {
+				i.log.V(1).Info("Unable to marshal directoryGroup payload to delete LdapGroup.",
+					"IP", i.ip,
+					"Model", i.HardwareType(),
+					"step", helper.WhosCalling(),
+					"Group", group.Dn,
+					"Error", internal.ErrStringOrEmpty(err),
+				)
+				continue
+			}
+
+			endpoint := "json/directory_groups"
+			statusCode, response, err := i.post(endpoint, payload)
+			if err != nil || statusCode != 200 {
+				i.log.V(1).Info("POST request to delete LdapGroup returned error.",
+					"IP", i.ip,
+					"Model", i.HardwareType(),
+					"endpoint", endpoint,
+					"step", helper.WhosCalling(),
+					"Group", group.Dn,
+					"StatusCode", statusCode,
+					"response", string(response),
+					"Error", internal.ErrStringOrEmpty(err),
+				)
+				continue
+			}
+
+			i.log.V(1).Info("LdapGroup was deleted.",
+				"IP", i.ip,
+				"Model", i.HardwareType(),
+				"Group", group.Dn,
+			)
+		}
+	}
+
+	return err
 }
 
 // Ldap applies LDAP configuration params.
