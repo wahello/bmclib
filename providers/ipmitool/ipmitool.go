@@ -57,7 +57,11 @@ func (c *Conn) Compatible(ctx context.Context) bool {
 		c.Log.V(0).Error(err, "error checking compatibility opening connection")
 		return false
 	}
-	defer c.Close(ctx)
+
+	defer func() {
+		_ = c.Close(ctx)
+	}()
+
 	_, err = c.con.PowerState(ctx)
 	if err != nil {
 		c.Log.V(0).Error(err, "error checking compatibility through power status")

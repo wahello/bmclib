@@ -88,7 +88,10 @@ func (c *C7000) postXML(data interface{}) (statusCode int, body []byte, err erro
 	if err != nil {
 		return 0, []byte{}, err
 	}
-	defer resp.Body.Close()
+
+	defer func() {
+		_ = resp.Body.Close()
+	}()
 
 	respDump, _ := httputil.DumpResponse(resp, true)
 	c.log.V(1).Info("responseTrace", "responseDump", string(respDump))

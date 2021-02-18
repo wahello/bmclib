@@ -47,8 +47,12 @@ func (p *Probe) hpIlo(ctx context.Context, log logr.Logger) (bmcConnection inter
 		return bmcConnection, err
 	}
 
-	defer resp.Body.Close()
-	defer io.Copy(ioutil.Discard, resp.Body) // nolint
+	defer func() {
+		_ = resp.Body.Close()
+	}()
+	defer func() {
+		_, _ = io.Copy(ioutil.Discard, resp.Body)
+	}()
 
 	payload, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
@@ -96,8 +100,12 @@ func (p *Probe) hpC7000(ctx context.Context, log logr.Logger) (bmcConnection int
 		return bmcConnection, err
 	}
 
-	defer resp.Body.Close()
-	defer io.Copy(ioutil.Discard, resp.Body) // nolint
+	defer func() {
+		_ = resp.Body.Close()
+	}()
+	defer func() {
+		_, _ = io.Copy(ioutil.Discard, resp.Body)
+	}()
 
 	payload, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
@@ -138,8 +146,12 @@ func (p *Probe) hpCl100(ctx context.Context, log logr.Logger) (bmcConnection int
 		return bmcConnection, err
 	}
 
-	defer resp.Body.Close()
-	defer io.Copy(ioutil.Discard, resp.Body) // nolint
+	defer func() {
+		_ = resp.Body.Close()
+	}()
+	defer func() {
+		_, _ = io.Copy(ioutil.Discard, resp.Body)
+	}()
 
 	var firstBytes = make([]byte, 8)
 	_, err = io.ReadFull(resp.Body, firstBytes)
@@ -166,8 +178,12 @@ func (p *Probe) idrac8(ctx context.Context, log logr.Logger) (bmcConnection inte
 		return bmcConnection, err
 	}
 
-	defer resp.Body.Close()
-	defer io.Copy(ioutil.Discard, resp.Body) // nolint
+	defer func() {
+		_ = resp.Body.Close()
+	}()
+	defer func() {
+		_, _ = io.Copy(ioutil.Discard, resp.Body)
+	}()
 
 	payload, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
@@ -192,8 +208,12 @@ func (p *Probe) idrac9(ctx context.Context, log logr.Logger) (bmcConnection inte
 		return bmcConnection, err
 	}
 
-	defer resp.Body.Close()
-	defer io.Copy(ioutil.Discard, resp.Body) // nolint
+	defer func() {
+		_ = resp.Body.Close()
+	}()
+	defer func() {
+		_, _ = io.Copy(ioutil.Discard, resp.Body)
+	}()
 
 	payload, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
@@ -218,8 +238,12 @@ func (p *Probe) m1000e(ctx context.Context, log logr.Logger) (bmcConnection inte
 		return bmcConnection, err
 	}
 
-	defer resp.Body.Close()
-	defer io.Copy(ioutil.Discard, resp.Body) // nolint
+	defer func() {
+		_ = resp.Body.Close()
+	}()
+	defer func() {
+		_, _ = io.Copy(ioutil.Discard, resp.Body)
+	}()
 
 	payload, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
@@ -244,8 +268,12 @@ func (p *Probe) supermicrox(ctx context.Context, log logr.Logger) (bmcConnection
 		return bmcConnection, err
 	}
 
-	defer resp.Body.Close()
-	defer io.Copy(ioutil.Discard, resp.Body) // nolint
+	defer func() {
+		_ = resp.Body.Close()
+	}()
+	defer func() {
+		_, _ = io.Copy(ioutil.Discard, resp.Body)
+	}()
 
 	payload, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
@@ -280,7 +308,9 @@ func (p *Probe) supermicrox11(ctx context.Context, log logr.Logger) (bmcConnecti
 		return bmcConnection, err
 	}
 
-	defer resp.Body.Close()
+	defer func() {
+		_ = resp.Body.Close()
+	}()
 
 	payload, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
@@ -315,8 +345,12 @@ func (p *Probe) quanta(ctx context.Context, log logr.Logger) (bmcConnection inte
 		return bmcConnection, err
 	}
 
-	defer resp.Body.Close()
-	defer io.Copy(ioutil.Discard, resp.Body) // nolint
+	defer func() {
+		_ = resp.Body.Close()
+	}()
+	defer func() {
+		_, _ = io.Copy(ioutil.Discard, resp.Body)
+	}()
 
 	payload, err := ioutil.ReadAll(resp.Body)
 	if err != nil {

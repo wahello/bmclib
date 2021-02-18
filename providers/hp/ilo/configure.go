@@ -178,22 +178,22 @@ func (i *Ilo) User(users []*cfgresources.User) (err error) {
 		}
 
 		if postPayload {
-			payload, err := json.Marshal(userinfo)
-			if err != nil {
+			payload, marshalErr := json.Marshal(userinfo)
+			if marshalErr != nil {
 				msg := "Unable to marshal userInfo payload to set User config."
 				i.log.V(1).Info(msg,
 					"IP", i.ip,
 					"Model", i.HardwareType(),
 					"step", helper.WhosCalling(),
 					"User", user.Name,
-					"Error", internal.ErrStringOrEmpty(err),
+					"Error", internal.ErrStringOrEmpty(marshalErr),
 				)
 				continue
 			}
 
 			endpoint := "json/user_info"
-			statusCode, response, err := i.post(endpoint, payload)
-			if err != nil || statusCode != 200 {
+			statusCode, response, requestErr := i.post(endpoint, payload)
+			if requestErr != nil || statusCode != 200 {
 				msg := "POST request to set User config returned error."
 				i.log.V(1).Info(msg,
 					"IP", i.ip,
@@ -203,7 +203,7 @@ func (i *Ilo) User(users []*cfgresources.User) (err error) {
 					"User", user.Name,
 					"StatusCode", statusCode,
 					"response", string(response),
-					"Error", internal.ErrStringOrEmpty(err),
+					"Error", internal.ErrStringOrEmpty(requestErr),
 				)
 
 				continue
@@ -526,21 +526,21 @@ func (i *Ilo) LdapGroup(cfg []*cfgresources.LdapGroup, cfgLdap *cfgresources.Lda
 		}
 
 		if postPayload {
-			payload, err := json.Marshal(directoryGroup)
-			if err != nil {
+			payload, marshalErr := json.Marshal(directoryGroup)
+			if marshalErr != nil {
 				i.log.V(1).Info("Unable to marshal directoryGroup payload to set LdapGroup config.",
 					"IP", i.ip,
 					"Model", i.HardwareType(),
 					"step", helper.WhosCalling(),
 					"Group", group.Group,
-					"Error", internal.ErrStringOrEmpty(err),
+					"Error", internal.ErrStringOrEmpty(marshalErr),
 				)
 				continue
 			}
 
 			endpoint := "json/directory_groups"
-			statusCode, response, err := i.post(endpoint, payload)
-			if err != nil || statusCode != 200 {
+			statusCode, response, requestErr := i.post(endpoint, payload)
+			if requestErr != nil || statusCode != 200 {
 				i.log.V(1).Info("POST request to set User config returned error.",
 					"IP", i.ip,
 					"Model", i.HardwareType(),
@@ -549,7 +549,7 @@ func (i *Ilo) LdapGroup(cfg []*cfgresources.LdapGroup, cfgLdap *cfgresources.Lda
 					"Group", group.Group,
 					"StatusCode", statusCode,
 					"response", string(response),
-					"Error", internal.ErrStringOrEmpty(err),
+					"Error", internal.ErrStringOrEmpty(requestErr),
 				)
 				continue
 			}
@@ -732,7 +732,8 @@ func (i *Ilo) UploadHTTPSCert(cert []byte, certFileName string, key []byte, keyF
 
 // Network method implements the Configure interface
 // nolint: gocyclo
-func (i *Ilo) Network(cfg *cfgresources.Network) (reset bool, err error) {
+func (i *Ilo) Network(cfg *cfgresources.Network) (bool, error) {
+	reset := false
 
 	// check if AccessSettings configuration update is required.
 	accessSettings, updateAccessSettings, err := i.cmpAccessSettings(cfg)
@@ -741,15 +742,15 @@ func (i *Ilo) Network(cfg *cfgresources.Network) (reset bool, err error) {
 	}
 
 	if updateAccessSettings {
-		payload, err := json.Marshal(accessSettings)
-		if err != nil {
-			return reset, fmt.Errorf("Error marshaling AccessSettings payload: %s", err)
+		payload, marshalErr := json.Marshal(accessSettings)
+		if marshalErr != nil {
+			return reset, fmt.Errorf("Error marshaling AccessSettings payload: %w", marshalErr)
 		}
 
 		endpoint := "json/access_settings"
-		statusCode, _, err := i.post(endpoint, payload)
-		if err != nil || statusCode != 200 {
-			return reset, fmt.Errorf("Error/non 200 response calling access_settings, status: %d, error: %s", statusCode, err)
+		statusCode, _, callErr := i.post(endpoint, payload)
+		if callErr != nil || statusCode != 200 {
+			return reset, fmt.Errorf("Error/non 200 response calling access_settings, status: %d, error: %w", statusCode, callErr)
 		}
 
 		reset = true
@@ -763,15 +764,15 @@ func (i *Ilo) Network(cfg *cfgresources.Network) (reset bool, err error) {
 
 	if updateIPv4Settings {
 
-		payload, err := json.Marshal(networkIPv4Settings)
-		if err != nil {
-			return reset, fmt.Errorf("Error marshaling NetworkIPv4 payload: %s", err)
+		payload, marshalErr := json.Marshal(networkIPv4Settings)
+		if marshalErr != nil {
+			return reset, fmt.Errorf("Error marshaling NetworkIPv4 payload: %w", marshalErr)
 		}
 
 		endpoint := "json/network_ipv4/interface/0"
-		statusCode, _, err := i.post(endpoint, payload)
-		if err != nil || statusCode != 200 {
-			return reset, fmt.Errorf("Error/non 200 response calling access_settings, status: %d, error: %s", statusCode, err)
+		statusCode, _, callErr := i.post(endpoint, payload)
+		if callErr != nil || statusCode != 200 {
+			return reset, fmt.Errorf("Error/non 200 response calling access_settings, status: %d, error: %w", statusCode, callErr)
 		}
 
 		reset = true
@@ -829,13 +830,13 @@ func (i *Ilo) Power(cfg *cfgresources.Power) error {
 
 	payload, err := json.Marshal(config)
 	if err != nil {
-		return fmt.Errorf("Error marshaling PowerRegulator payload: %s", err)
+		return fmt.Errorf("Error marshaling PowerRegulator payload: %w", err)
 	}
 
 	endpoint := "json/power_regulator"
 	statusCode, _, err := i.post(endpoint, payload)
 	if err != nil || statusCode != 200 {
-		return fmt.Errorf("Error/non 200 response calling power_regulator, status: %d, error: %s", statusCode, err)
+		return fmt.Errorf("Error/non 200 response calling power_regulator, status: %d, error: %w", statusCode, err)
 	}
 
 	i.log.V(1).Info("Power regulator config applied.",

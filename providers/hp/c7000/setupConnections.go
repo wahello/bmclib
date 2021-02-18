@@ -58,7 +58,10 @@ func (c *C7000) httpLogin() (err error) {
 	if err != nil || resp.StatusCode != 200 {
 		return errors.ErrLoginFailed
 	}
-	defer resp.Body.Close()
+
+	defer func() {
+		_ = resp.Body.Close()
+	}()
 
 	respDump, _ := httputil.DumpResponse(resp, true)
 	c.log.V(2).Info("responseTrace", "responseDump", string(respDump))

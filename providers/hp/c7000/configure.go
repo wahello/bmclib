@@ -436,18 +436,14 @@ func (c *C7000) applyAddLdapGroupBayAccess(group string) (err error) {
 	//setup blade bays payload
 	bladebays := bladeBays{}
 	for b := 1; b <= 16; b++ {
-		baynumber := bayNumber{Text: b}
-		access := access{Text: true}
-		blade := blade{Hpoa: "hpoa.xsd", BayNumber: baynumber, Access: access}
+		blade := blade{Hpoa: "hpoa.xsd", BayNumber: bayNumber{Text: b}, Access: access{Text: true}}
 		bladebays.Blade = append(bladebays.Blade, blade)
 	}
 
 	//setup interconnect tray bays payload
 	interconnecttraybays := interconnectTrayBays{}
 	for t := 1; t <= 8; t++ {
-		access := access{Text: true}
-		baynumber := bayNumber{Text: t}
-		interconnecttray := interconnectTray{Hpoa: "hpoa.xsd", Access: access, BayNumber: baynumber}
+		interconnecttray := interconnectTray{Hpoa: "hpoa.xsd", Access: access{Text: true}, BayNumber: bayNumber{Text: t}}
 		interconnecttraybays.InterconnectTray = append(interconnecttraybays.InterconnectTray, interconnecttray)
 	}
 
@@ -542,9 +538,9 @@ func (c *C7000) User(users []*cfgresources.User) (err error) {
 		}
 
 		payload := AddUser{Username: username, Password: password}
-		statusCode, _, err := c.postXML(payload)
-		if err != nil {
-			return err
+		statusCode, _, requestErr := c.postXML(payload)
+		if requestErr != nil {
+			return requestErr
 		}
 
 		//user exists
@@ -558,7 +554,7 @@ func (c *C7000) User(users []*cfgresources.User) (err error) {
 			)
 
 			//update user password
-			err := c.setUserPassword(cfg.Name, cfg.Password)
+			err = c.setUserPassword(cfg.Name, cfg.Password)
 			if err != nil {
 				return err
 			}
@@ -663,18 +659,13 @@ func (c *C7000) applyAddUserBayAccess(user string) (err error) {
 	//setup blade bays payload
 	bladebays := bladeBays{}
 	for b := 1; b <= 16; b++ {
-		baynumber := bayNumber{Text: b}
-		access := access{Text: true}
-		blade := blade{Hpoa: "hpoa.xsd", BayNumber: baynumber, Access: access}
-		bladebays.Blade = append(bladebays.Blade, blade)
+		bladebays.Blade = append(bladebays.Blade, blade{Hpoa: "hpoa.xsd", BayNumber: bayNumber{Text: b}, Access: access{Text: true}})
 	}
 
 	//setup interconnect tray bays payload
 	interconnecttraybays := interconnectTrayBays{}
 	for t := 1; t <= 8; t++ {
-		access := access{Text: true}
-		baynumber := bayNumber{Text: t}
-		interconnecttray := interconnectTray{Hpoa: "hpoa.xsd", Access: access, BayNumber: baynumber}
+		interconnecttray := interconnectTray{Hpoa: "hpoa.xsd", Access: access{Text: true}, BayNumber: bayNumber{Text: t}}
 		interconnecttraybays.InterconnectTray = append(interconnecttraybays.InterconnectTray, interconnecttray)
 	}
 

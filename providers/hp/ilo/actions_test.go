@@ -96,6 +96,9 @@ func Test_ilo(t *testing.T) {
 	}
 
 	for _, tt := range tests {
+		// https://github.com/golang/go/wiki/CommonMistakes#using-reference-to-loop-iterator-variable
+		tt := tt
+
 		t.Run(tt.name, func(t *testing.T) {
 			got, err := tt.bmcMethod()
 

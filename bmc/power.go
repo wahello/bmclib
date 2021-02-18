@@ -31,6 +31,7 @@ type PowerStateGetter interface {
 
 // SetPowerState sets the power state for a BMC, trying all interface implementations passed in
 func SetPowerState(ctx context.Context, state string, p []PowerSetter) (ok bool, err error) {
+	var setErr error
 Loop:
 	for _, elem := range p {
 		select {
@@ -39,7 +40,7 @@ Loop:
 			break Loop
 		default:
 			if elem != nil {
-				ok, setErr := elem.PowerSet(ctx, state)
+				ok, setErr = elem.PowerSet(ctx, state)
 				if setErr != nil {
 					err = multierror.Append(err, setErr)
 					continue
@@ -75,6 +76,7 @@ func SetPowerStateFromInterfaces(ctx context.Context, state string, generic []in
 
 // GetPowerState sets the power state for a BMC, trying all interface implementations passed in
 func GetPowerState(ctx context.Context, p []PowerStateGetter) (state string, err error) {
+	var stateErr error
 Loop:
 	for _, elem := range p {
 		select {
@@ -83,7 +85,7 @@ Loop:
 			break Loop
 		default:
 			if elem != nil {
-				state, stateErr := elem.PowerStateGet(ctx)
+				state, stateErr = elem.PowerStateGet(ctx)
 				if stateErr != nil {
 					err = multierror.Append(err, stateErr)
 					continue

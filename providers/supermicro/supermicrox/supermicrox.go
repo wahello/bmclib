@@ -87,7 +87,10 @@ func (s *SupermicroX) get(endpoint string) (payload []byte, err error) {
 	if err != nil {
 		return payload, err
 	}
-	defer resp.Body.Close()
+
+	defer func() {
+		_ = resp.Body.Close()
+	}()
 
 	respDump, _ := httputil.DumpResponse(resp, true)
 	s.log.V(2).Info("", "responseDump", string(respDump))
@@ -151,7 +154,10 @@ func (s *SupermicroX) post(endpoint string, urlValues *url.Values, form []byte, 
 	if err != nil {
 		return statusCode, err
 	}
-	defer resp.Body.Close()
+
+	defer func() {
+		_ = resp.Body.Close()
+	}()
 
 	respDump, _ := httputil.DumpResponse(resp, true)
 	s.log.V(2).Info("", "responseDump", string(respDump))
@@ -194,7 +200,10 @@ func (s *SupermicroX) query(requestType string) (ipmi *supermicro.IPMI, err erro
 	if err != nil {
 		return ipmi, err
 	}
-	defer resp.Body.Close()
+
+	defer func() {
+		_ = resp.Body.Close()
+	}()
 
 	payload, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
@@ -319,10 +328,9 @@ func (s *SupermicroX) Memory() (mem int, err error) {
 	ipmi, err := s.query("SMBIOS_INFO.XML=(0,0)")
 
 	for _, dimm := range ipmi.Dimm {
-		dimm := strings.TrimSuffix(dimm.Size, " MB")
-		size, err := strconv.Atoi(dimm)
-		if err != nil {
-			return mem, err
+		size, conversionErr := strconv.Atoi(strings.TrimSuffix(dimm.Size, " MB"))
+		if conversionErr != nil {
+			return mem, conversionErr
 		}
 		mem += size
 	}
@@ -377,15 +385,16 @@ func (s *SupermicroX) PowerKw() (power float64, err error) {
 	}
 
 	if ipmi.NodeInfo != nil {
-		serial, err := s.Serial()
-		if err != nil {
-			return power, err
+		serial, serialErr := s.Serial()
+		if serialErr != nil {
+			return power, serialErr
 		}
+
 		for _, node := range ipmi.NodeInfo.Nodes {
 			if strings.ToLower(node.NodeSerial) == serial {
-				value, err := strconv.Atoi(node.Power)
-				if err != nil {
-					return power, err
+				value, conversionErr := strconv.Atoi(node.Power)
+				if conversionErr != nil {
+					return power, conversionErr
 				}
 
 				return float64(value) / 1000.00, err
@@ -411,30 +420,31 @@ func (s *SupermicroX) PowerState() (state string, err error) {
 }
 
 // TempC returns the current temperature of the machine
-func (s *SupermicroX) TempC() (temp int, err error) {
+func (s *SupermicroX) TempC() (int, error) {
 	ipmi, err := s.query("Get_NodeInfoReadings.XML=(0,0)")
 	if err != nil {
-		return temp, err
+		return 0, err
 	}
 
 	if ipmi.NodeInfo != nil {
-		serial, err := s.Serial()
-		if err != nil {
-			return temp, err
+		serial, serialErr := s.Serial()
+		if serialErr != nil {
+			return 0, serialErr
 		}
+
 		for _, node := range ipmi.NodeInfo.Nodes {
 			if strings.ToLower(node.NodeSerial) == serial {
-				temp, err := strconv.Atoi(node.SystemTemp)
+				tempC, err := strconv.Atoi(node.SystemTemp)
 				if err != nil {
-					return temp, err
+					return 0, err
 				}
 
-				return temp, err
+				return tempC, err
 			}
 		}
 	}
 
-	return temp, err
+	return 0, nil
 }
 
 // IsBlade returns if the current hardware is a blade or not

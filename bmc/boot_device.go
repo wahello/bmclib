@@ -15,6 +15,7 @@ type BootDeviceSetter interface {
 
 // SetBootDevice sets the boot device. Next boot only unless setPersistent=true
 func SetBootDevice(ctx context.Context, bootDevice string, setPersistent, efiBoot bool, b []BootDeviceSetter) (ok bool, err error) {
+	var setErr error
 Loop:
 	for _, elem := range b {
 		select {
@@ -23,7 +24,7 @@ Loop:
 			break Loop
 		default:
 			if elem != nil {
-				ok, setErr := elem.BootDeviceSet(ctx, bootDevice, setPersistent, efiBoot)
+				ok, setErr = elem.BootDeviceSet(ctx, bootDevice, setPersistent, efiBoot)
 				if setErr != nil {
 					err = multierror.Append(err, setErr)
 					continue

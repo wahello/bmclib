@@ -17,6 +17,7 @@ type BMCResetter interface {
 
 // ResetBMC tries all implementations for a success BMC reset
 func ResetBMC(ctx context.Context, resetType string, b []BMCResetter) (ok bool, err error) {
+	var setErr error
 Loop:
 	for _, elem := range b {
 		select {
@@ -25,7 +26,7 @@ Loop:
 			break Loop
 		default:
 			if elem != nil {
-				ok, setErr := elem.BmcReset(ctx, resetType)
+				ok, setErr = elem.BmcReset(ctx, resetType)
 				if setErr != nil {
 					err = multierror.Append(err, setErr)
 					continue

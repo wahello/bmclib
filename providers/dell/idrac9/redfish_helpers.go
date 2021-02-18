@@ -186,21 +186,20 @@ func (i *IDrac9) purgeJobsForBiosSettings() (err error) {
 }
 
 //Purges jobs of the given type - if they are in the "Scheduled" state
-func (i *IDrac9) purgeJobsByType(jobIDs []string, jobType string) (err error) {
+// This function has to be reinvestigated, this is a mess.
+func (i *IDrac9) purgeJobsByType(jobIDs []string, jobType string) (error) {
 	for _, jobID := range jobIDs {
 		jState, jType, err := i.getJob(jobID)
 		if err != nil {
-			return err
+			return errors.Wrapf(err, "Job not in Scheduled state cannot be purged, state: %s, id: %s", jState, jobID)
 		}
 
 		if jType == jobType && jState == "Scheduled" {
 			return i.purgeJob(jobID)
 		}
-
-		return errors.Wrapf(err, "Job not in Scheduled state cannot be purged, state: %s, id: %s", jState, jobID) // nolint
 	}
 
-	return err
+	return nil
 }
 
 //Returns the job state, Type for the given Job id

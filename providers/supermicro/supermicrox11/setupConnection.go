@@ -50,7 +50,10 @@ func (s *SupermicroX) httpLogin() (err error) {
 	if err != nil {
 		return err
 	}
-	defer resp.Body.Close()
+
+	defer func() {
+		_ = resp.Body.Close()
+	}()
 
 	if !strings.Contains(string(payload), "../cgi/url_redirect.cgi?url_name=mainmenu") {
 		return errors.ErrLoginFailed
@@ -71,57 +74,65 @@ func (s *SupermicroX) httpLogin() (err error) {
 
 // Close closes the connection properly
 func (s *SupermicroX) Close(ctx context.Context) (err error) {
-	if s.httpClient != nil {
-		bmcURL := fmt.Sprintf("https://%s/cgi/logout.cgi", s.ip)
-		log.WithFields(log.Fields{"step": "bmc connection", "vendor": supermicro.VendorID, "ip": s.ip}).Debug("logout from bmc")
+	if s.httpClient == nil {
+		return nil
+	}
 
-		req, err := http.NewRequest("POST", bmcURL, nil)
-		if err != nil {
-			return err
-		}
-		req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
-		u, err := url.Parse(bmcURL)
-		if err != nil {
-			return err
-		}
-		for _, cookie := range s.httpClient.Jar.Cookies(u) {
-			if cookie.Name == "SID" && cookie.Value != "" {
-				req.AddCookie(cookie)
-			}
-		}
-		if log.GetLevel() == log.TraceLevel {
-			log.Trace(fmt.Sprintf("%s/cgi/%s", bmcURL, s.ip))
-			dump, err := httputil.DumpRequestOut(req, true)
-			if err == nil {
-				log.WithFields(log.Fields{
-					"type": "Request",
-					"when": "Before HTTP Action",
-					"dump": string(dump),
-				}).Trace("")
-			}
-		}
+	bmcURL := fmt.Sprintf("https://%s/cgi/logout.cgi", s.ip)
+	log.WithFields(log.Fields{"step": "bmc connection", "vendor": supermicro.VendorID, "ip": s.ip}).Debug("logout from bmc")
 
-		resp, err := s.httpClient.Do(req)
-		if err != nil {
-			return err
-		}
-
-		defer resp.Body.Close()
-		defer io.Copy(ioutil.Discard, resp.Body) // nolint
-
-		if log.GetLevel() == log.TraceLevel {
-			log.Trace(fmt.Sprintf("%s/cgi/%s", bmcURL, s.ip))
-			dump, err := httputil.DumpRequestOut(req, true)
-			if err == nil {
-				log.WithFields(log.Fields{
-					"type": "Request",
-					"when": "After HTTP Action",
-					"dump": string(dump),
-				}).Trace("")
-			}
-		}
-
+	req, err := http.NewRequest("POST", bmcURL, nil)
+	if err != nil {
 		return err
 	}
+
+	req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
+	u, err := url.Parse(bmcURL)
+	if err != nil {
+		return err
+	}
+
+	for _, cookie := range s.httpClient.Jar.Cookies(u) {
+		if cookie.Name == "SID" && cookie.Value != "" {
+			req.AddCookie(cookie)
+		}
+	}
+
+	if log.GetLevel() == log.TraceLevel {
+		log.Trace(fmt.Sprintf("%s/cgi/%s", bmcURL, s.ip))
+		dump, requestErr := httputil.DumpRequestOut(req, true)
+		if requestErr == nil {
+			log.WithFields(log.Fields{
+				"type": "Request",
+				"when": "Before HTTP Action",
+				"dump": string(dump),
+			}).Trace("")
+		}
+	}
+
+	resp, err := s.httpClient.Do(req)
+	if err != nil {
+		return err
+	}
+
+	defer func() {
+		_ = resp.Body.Close()
+	}()
+	defer func() {
+		_, _ = io.Copy(ioutil.Discard, resp.Body)
+	}()
+
+	if log.GetLevel() == log.TraceLevel {
+		log.Trace(fmt.Sprintf("%s/cgi/%s", bmcURL, s.ip))
+		dump, requestErr := httputil.DumpRequestOut(req, true)
+		if requestErr == nil {
+			log.WithFields(log.Fields{
+				"type": "Request",
+				"when": "After HTTP Action",
+				"dump": string(dump),
+			}).Trace("")
+		}
+	}
+
 	return err
 }

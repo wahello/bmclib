@@ -77,15 +77,15 @@ func (i *IDrac9) Bios(cfg *cfgresources.Bios) (err error) {
 	if *newBiosSettings != *currentBiosSettings {
 
 		//retrieve fields that is the config to be applied
-		toApplyBiosSettings, err := diffBiosSettings(newBiosSettings, currentBiosSettings)
-		if err != nil {
-			i.log.V(1).Error(err, "diffBiosSettings returned error.",
+		toApplyBiosSettings, diffErr := diffBiosSettings(newBiosSettings, currentBiosSettings)
+		if diffErr != nil {
+			i.log.V(1).Error(diffErr, "diffBiosSettings returned error.",
 				"IP", i.ip,
 				"Model", i.HardwareType(),
 				"step", helper.WhosCalling(),
-				"Error", internal.ErrStringOrEmpty(err),
+				"Error", internal.ErrStringOrEmpty(diffErr),
 			)
-			return err
+			return diffErr
 		}
 
 		i.log.V(0).Info("Bios configuration to be applied",
@@ -226,14 +226,14 @@ func (i *IDrac9) User(cfgUsers []*cfgresources.User) (err error) {
 		//if the user exists but is disabled in our config, remove the user
 		if !cfgUser.Enable && uExists {
 			endpoint := fmt.Sprintf("sysmgmt/2017/server/user?userid=%d", userID)
-			statusCode, response, err := i.delete(endpoint)
-			if err != nil {
-				i.log.V(1).Error(err, "Delete user request failed.",
+			statusCode, response, requestErr := i.delete(endpoint)
+			if requestErr != nil {
+				i.log.V(1).Error(requestErr, "Delete user request failed.",
 					"IP", i.ip,
 					"Model", i.HardwareType(),
 					"step", helper.WhosCalling(),
 					"User", cfgUser.Name,
-					"Error", internal.ErrStringOrEmpty(err),
+					"Error", internal.ErrStringOrEmpty(requestErr),
 					"StatusCode", statusCode,
 					"Response", response,
 				)
@@ -757,7 +757,10 @@ func (i *IDrac9) UploadHTTPSCert(cert []byte, certFileName string, key []byte, k
 	}
 
 	// close multipart writer - adds the teminating boundary.
-	w.Close()
+	err = w.Close()
+	if err != nil {
+		return false, err
+	}
 
 	// 1. POST upload x509 cert
 	status, body, err := i.post(endpoint, form.Bytes(), w.FormDataContentType())

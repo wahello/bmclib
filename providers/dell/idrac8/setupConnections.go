@@ -49,7 +49,10 @@ func (i *IDrac8) httpLogin() (err error) {
 	if err != nil {
 		return err
 	}
-	defer resp.Body.Close()
+
+	defer func() {
+		_ = resp.Body.Close()
+	}()
 
 	iDracAuth := &dell.IDracAuth{}
 	err = xml.Unmarshal(payload, iDracAuth)
@@ -111,8 +114,12 @@ func (i *IDrac8) Close(ctx context.Context) error {
 		if err != nil {
 			multiErr = multierror.Append(multiErr, err)
 		} else {
-			defer resp.Body.Close()
-			defer io.Copy(ioutil.Discard, resp.Body) // nolint
+			defer func() {
+				_ = resp.Body.Close()
+			}()
+			defer func() {
+				_, _ = io.Copy(ioutil.Discard, resp.Body)
+			}()
 		}
 	}
 

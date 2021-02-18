@@ -404,7 +404,11 @@ func (m *M1000e) post(endpoint string, form *url.Values) (err error) {
 	if err != nil {
 		return err
 	}
-	defer resp.Body.Close()
+
+	defer func() {
+		_ = resp.Body.Close()
+	}()
+
 	respDump, _ := httputil.DumpResponse(resp, true)
 	m.log.V(2).Info("responseTrace", "responseDump", string(respDump))
 

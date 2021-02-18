@@ -30,6 +30,7 @@ type UserReader interface {
 
 // CreateUser creates a user using the passed in implementation
 func CreateUser(ctx context.Context, user, pass, role string, u []UserCreator) (ok bool, err error) {
+	var createErr error
 Loop:
 	for _, elem := range u {
 		select {
@@ -38,7 +39,7 @@ Loop:
 			break Loop
 		default:
 			if elem != nil {
-				ok, createErr := elem.UserCreate(ctx, user, pass, role)
+				ok, createErr = elem.UserCreate(ctx, user, pass, role)
 				if createErr != nil {
 					err = multierror.Append(err, createErr)
 					continue
@@ -74,6 +75,7 @@ func CreateUserFromInterfaces(ctx context.Context, user, pass, role string, gene
 
 // UpdateUser updates a user's settings
 func UpdateUser(ctx context.Context, user, pass, role string, u []UserUpdater) (ok bool, err error) {
+	var updateErr error
 Loop:
 	for _, elem := range u {
 		select {
@@ -82,9 +84,9 @@ Loop:
 			break Loop
 		default:
 			if elem != nil {
-				ok, UpdateErr := elem.UserUpdate(ctx, user, pass, role)
-				if UpdateErr != nil {
-					err = multierror.Append(err, UpdateErr)
+				ok, updateErr = elem.UserUpdate(ctx, user, pass, role)
+				if updateErr != nil {
+					err = multierror.Append(err, updateErr)
 					continue
 				}
 				if !ok {
@@ -118,6 +120,7 @@ func UpdateUserFromInterfaces(ctx context.Context, user, pass, role string, gene
 
 // DeleteUser deletes a user from a BMC
 func DeleteUser(ctx context.Context, user string, u []UserDeleter) (ok bool, err error) {
+	var deleteErr error
 Loop:
 	for _, elem := range u {
 		select {
@@ -126,7 +129,7 @@ Loop:
 			break Loop
 		default:
 			if elem != nil {
-				ok, deleteErr := elem.UserDelete(ctx, user)
+				ok, deleteErr = elem.UserDelete(ctx, user)
 				if deleteErr != nil {
 					err = multierror.Append(err, deleteErr)
 					continue
@@ -162,6 +165,7 @@ func DeleteUserFromInterfaces(ctx context.Context, user string, generic []interf
 
 // ReadUsers returns all users from a BMC
 func ReadUsers(ctx context.Context, u []UserReader) (users []map[string]string, err error) {
+	var readErr error
 Loop:
 	for _, elem := range u {
 		select {
@@ -170,7 +174,7 @@ Loop:
 			break Loop
 		default:
 			if elem != nil {
-				users, readErr := elem.UserRead(ctx)
+				users, readErr = elem.UserRead(ctx)
 				if readErr != nil {
 					err = multierror.Append(err, readErr)
 					continue

@@ -50,7 +50,10 @@ func New(ctx context.Context, host string, username string, password string, log
 	if err != nil {
 		return nil, err
 	}
-	defer resp.Body.Close()
+
+	defer func() {
+		_ = resp.Body.Close()
+	}()
 
 	Rimp := &hp.Rimp{}
 	err = xml.Unmarshal(payload, Rimp)

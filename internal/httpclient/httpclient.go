@@ -13,6 +13,9 @@ import (
 
 // Build builds a client session with our default parameters
 func Build() (client *http.Client, err error) {
+	// Disable the linter's objection to insecure stuff.
+	// (https://github.com/securego/gosec/issues/278)
+	// #nosec G402
 	tr := &http.Transport{
 		TLSClientConfig:   &tls.Config{InsecureSkipVerify: true},
 		DisableKeepAlives: true,

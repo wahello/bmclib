@@ -20,13 +20,18 @@ func (i *IDrac9) CurrentHTTPSCert() ([]*x509.Certificate, bool, error) {
 		Timeout: time.Duration(10) * time.Second,
 	}
 
+	// Disable the linter's objection to insecure stuff.
+	// (https://github.com/securego/gosec/issues/278)
+	// #nosec G402
 	conn, err := tls.DialWithDialer(dialer, "tcp", i.ip+":"+"443", &tls.Config{InsecureSkipVerify: true})
 
 	if err != nil {
 		return []*x509.Certificate{{}}, true, err
 	}
 
-	defer conn.Close()
+	defer func() {
+		_ = conn.Close()
+	}()
 
 	return conn.ConnectionState().PeerCertificates, true, nil
 
@@ -103,8 +108,8 @@ func (i *IDrac9) queryLdapRoleGroups() (ldapRoleGroups LdapRoleGroups, err error
 		return ldapRoleGroups, err
 	}
 
-	idracLdapRoleGroups := make(idracLdapRoleGroups)
-	err = json.Unmarshal(data, &idracLdapRoleGroups)
+	roleGroups := make(idracLdapRoleGroups)
+	err = json.Unmarshal(data, &roleGroups)
 	if err != nil {
 		i.log.V(1).Error(err, "Unable to unmarshal payload.",
 			"IP", i.ip,
@@ -116,5 +121,5 @@ func (i *IDrac9) queryLdapRoleGroups() (ldapRoleGroups LdapRoleGroups, err error
 		return ldapRoleGroups, err
 	}
 
-	return idracLdapRoleGroups["iDRAC.LDAPRoleGroup"], err
+	return roleGroups["iDRAC.LDAPRoleGroup"], err
 }

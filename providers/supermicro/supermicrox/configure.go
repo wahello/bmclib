@@ -161,8 +161,8 @@ func (s *SupermicroX) User(users []*cfgresources.User) (err error) {
 
 		endpoint := "config_user.cgi"
 		form, _ := query.Values(configUser)
-		statusCode, err := s.post(endpoint, &form, []byte{}, "")
-		if err != nil || statusCode != 200 {
+		statusCode, requestErr := s.post(endpoint, &form, []byte{}, "")
+		if requestErr != nil || statusCode != 200 {
 			msg := "POST request to set User config returned error."
 			s.log.V(1).Info(msg,
 				"ip", s.ip,
@@ -170,7 +170,7 @@ func (s *SupermicroX) User(users []*cfgresources.User) (err error) {
 				"endpoint", endpoint,
 				"statusCode", statusCode,
 				"step", helper.WhosCalling(),
-				"error", internal.ErrStringOrEmpty(err))
+				"error", internal.ErrStringOrEmpty(requestErr))
 			return errors.New(msg)
 		}
 
@@ -421,8 +421,8 @@ func (s *SupermicroX) LdapGroup(cfgGroup []*cfgresources.LdapGroup, cfgLdap *cfg
 
 		endpoint := "op.cgi"
 		form, _ := query.Values(configLdap)
-		statusCode, err := s.post(endpoint, &form, []byte{}, "")
-		if err != nil || statusCode != 200 {
+		statusCode, requestErr := s.post(endpoint, &form, []byte{}, "")
+		if requestErr != nil || statusCode != 200 {
 			msg := "POST request to set Ldap config returned error."
 			s.log.V(1).Info(msg,
 				"step", helper.WhosCalling(),
@@ -430,7 +430,7 @@ func (s *SupermicroX) LdapGroup(cfgGroup []*cfgresources.LdapGroup, cfgLdap *cfg
 				"model", s.HardwareType(),
 				"endpoint", endpoint,
 				"statusCode", statusCode,
-				"error", internal.ErrStringOrEmpty(err))
+				"error", internal.ErrStringOrEmpty(requestErr))
 			return errors.New(msg)
 		}
 	}
@@ -562,7 +562,10 @@ func (s *SupermicroX) UploadHTTPSCert(cert []byte, certFileName string, key []by
 	}
 
 	// close multipart writer - adds the teminating boundary.
-	w.Close()
+	err = w.Close()
+	if err != nil {
+		return false, err
+	}
 
 	// 1. upload
 	status, err := s.post(endpoint, &url.Values{}, form.Bytes(), w.FormDataContentType())

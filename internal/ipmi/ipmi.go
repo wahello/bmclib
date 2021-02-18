@@ -35,11 +35,11 @@ func New(username string, password string, host string) (ipmi *Ipmi, err error) 
 	return ipmi, err
 }
 
-func (i *Ipmi) run(ctx context.Context, command []string) (output string, err error) {
+func (i *Ipmi) run(ctx context.Context, command []string) (string, error) {
 	ipmiArgs := []string{"-I", "lanplus", "-U", i.Username, "-E", "-N", "5"}
 	if strings.Contains(i.Host, ":") {
-		host, port, err := net.SplitHostPort(i.Host)
-		if err == nil {
+		host, port, splitErr := net.SplitHostPort(i.Host)
+		if splitErr == nil {
 			ipmiArgs = append(ipmiArgs, "-H", host, "-p", port)
 		}
 	} else {
@@ -50,7 +50,7 @@ func (i *Ipmi) run(ctx context.Context, command []string) (output string, err er
 	cmd := exec.CommandContext(ctx, i.ipmitool, ipmiArgs...)
 	cmd.Env = []string{fmt.Sprintf("IPMITOOL_PASSWORD=%s", i.Password)}
 	out, err := cmd.CombinedOutput()
-	if ctx.Err() == context.DeadlineExceeded {
+	if errors.Is(ctx.Err(), context.DeadlineExceeded) {
 		return string(out), ctx.Err()
 	}
 	return string(out), errors.Wrap(err, strings.TrimSpace(string(out)))
@@ -60,24 +60,24 @@ func (i *Ipmi) run(ctx context.Context, command []string) (output string, err er
 func (i *Ipmi) PowerCycle(ctx context.Context) (status bool, err error) {
 	output, err := i.run(ctx, []string{"chassis", "power", "cycle"})
 	if err != nil {
-		return false, fmt.Errorf("%v: %v", err, output)
+		return false, fmt.Errorf("%w: %v", err, output)
 	}
 
 	if strings.HasPrefix(output, "Chassis Power Control: Cycle") {
 		return true, err
 	}
-	return false, fmt.Errorf("%v: %v", err, output)
+	return false, fmt.Errorf("%w: %v", err, output)
 }
 
 // PowerReset reboots the machine via bmc
 func (i *Ipmi) PowerReset(ctx context.Context) (status bool, err error) {
 	output, err := i.run(ctx, []string{"chassis", "power", "reset"})
 	if err != nil {
-		return false, fmt.Errorf("%v: %v", err, output)
+		return false, fmt.Errorf("%w: %v", err, output)
 	}
 
 	if !strings.HasPrefix(output, "Chassis Power Control: Reset") {
-		return false, fmt.Errorf("%v: %v", err, output)
+		return false, fmt.Errorf("%w: %v", err, output)
 	}
 	return true, err
 }
@@ -86,26 +86,26 @@ func (i *Ipmi) PowerReset(ctx context.Context) (status bool, err error) {
 func (i *Ipmi) PowerCycleBmc(ctx context.Context) (status bool, err error) {
 	output, err := i.run(ctx, []string{"mc", "reset", "cold"})
 	if err != nil {
-		return false, fmt.Errorf("%v: %v", err, output)
+		return false, fmt.Errorf("%w: %v", err, output)
 	}
 
 	if strings.HasPrefix(output, "Sent cold reset command to MC") {
 		return true, err
 	}
-	return false, fmt.Errorf("%v: %v", err, output)
+	return false, fmt.Errorf("%w: %v", err, output)
 }
 
 // PowerResetBmc reboots the bmc we are connected to
 func (i *Ipmi) PowerResetBmc(ctx context.Context, resetType string) (ok bool, err error) {
 	output, err := i.run(ctx, []string{"mc", "reset", strings.ToLower(resetType)})
 	if err != nil {
-		return false, fmt.Errorf("%v: %v", err, output)
+		return false, fmt.Errorf("%w: %v", err, output)
 	}
 
 	if strings.HasPrefix(output, fmt.Sprintf("Sent %v reset command to MC", strings.ToLower(resetType))) {
 		return true, err
 	}
-	return false, fmt.Errorf("%v: %v", err, output)
+	return false, fmt.Errorf("%w: %v", err, output)
 }
 
 // PowerOn power on the machine via bmc
@@ -121,26 +121,26 @@ func (i *Ipmi) PowerOn(ctx context.Context) (status bool, err error) {
 
 	output, err := i.run(ctx, []string{"chassis", "power", "on"})
 	if err != nil {
-		return false, fmt.Errorf("%v: %v", err, output)
+		return false, fmt.Errorf("%w: %v", err, output)
 	}
 
 	if strings.HasPrefix(output, "Chassis Power Control: Up/On") {
 		return true, err
 	}
-	return false, fmt.Errorf("%v: %v", err, output)
+	return false, fmt.Errorf("%w: %v", err, output)
 }
 
 // PowerOnForce power on the machine via bmc even when the machine is already on (Thanks HP!)
 func (i *Ipmi) PowerOnForce(ctx context.Context) (status bool, err error) {
 	output, err := i.run(ctx, []string{"chassis", "power", "on"})
 	if err != nil {
-		return false, fmt.Errorf("%v: %v", err, output)
+		return false, fmt.Errorf("%w: %v", err, output)
 	}
 
 	if strings.HasPrefix(output, "Chassis Power Control: Up/On") {
 		return true, err
 	}
-	return false, fmt.Errorf("%v: %v", err, output)
+	return false, fmt.Errorf("%w: %v", err, output)
 }
 
 // PowerOff power off the machine via bmc
@@ -158,7 +158,7 @@ func (i *Ipmi) PowerOff(ctx context.Context) (status bool, err error) {
 	if strings.Contains(output, "Chassis Power Control: Down/Off") {
 		return true, err
 	}
-	return false, fmt.Errorf("%v: %v", err, output)
+	return false, fmt.Errorf("%w: %v", err, output)
 }
 
 // PowerSoft power off the machine via bmc
@@ -170,7 +170,7 @@ func (i *Ipmi) PowerSoft(ctx context.Context) (status bool, err error) {
 
 	output, err := i.run(ctx, []string{"chassis", "power", "soft"})
 	if !strings.Contains(output, "Chassis Power Control: Soft") {
-		return false, fmt.Errorf("%v: %v", err, output)
+		return false, fmt.Errorf("%w: %v", err, output)
 	}
 	return true, err
 }
@@ -179,13 +179,13 @@ func (i *Ipmi) PowerSoft(ctx context.Context) (status bool, err error) {
 func (i *Ipmi) PxeOnceEfi(ctx context.Context) (status bool, err error) {
 	output, err := i.run(ctx, []string{"chassis", "bootdev", "pxe", "options=efiboot"})
 	if err != nil {
-		return false, fmt.Errorf("%v: %v", err, output)
+		return false, fmt.Errorf("%w: %v", err, output)
 	}
 
 	if strings.Contains(output, "Set Boot Device to pxe") {
 		return true, err
 	}
-	return false, fmt.Errorf("%v: %v", err, output)
+	return false, fmt.Errorf("%w: %v", err, output)
 }
 
 // BootDeviceSet sets the next boot device with options
@@ -209,26 +209,26 @@ func (i *Ipmi) BootDeviceSet(ctx context.Context, bootDevice string, setPersiste
 
 	output, err := i.run(ctx, ipmiCmd)
 	if err != nil {
-		return false, fmt.Errorf("%v: %v", err, output)
+		return false, fmt.Errorf("%w: %v", err, output)
 	}
 
 	if strings.Contains(output, fmt.Sprintf("Set Boot Device to %v", strings.ToLower(bootDevice))) {
 		return true, err
 	}
-	return false, fmt.Errorf("%v: %v", err, output)
+	return false, fmt.Errorf("%w: %v", err, output)
 }
 
 // PxeOnceMbr makes the machine to boot via pxe once using MBR
 func (i *Ipmi) PxeOnceMbr(ctx context.Context) (status bool, err error) {
 	output, err := i.run(ctx, []string{"chassis", "bootdev", "pxe"})
 	if err != nil {
-		return false, fmt.Errorf("%v: %v", err, output)
+		return false, fmt.Errorf("%w: %v", err, output)
 	}
 
 	if strings.Contains(output, "Set Boot Device to pxe") {
 		return true, err
 	}
-	return false, fmt.Errorf("%v: %v", err, output)
+	return false, fmt.Errorf("%w: %v", err, output)
 }
 
 // PxeOnce makes the machine to boot via pxe once using MBR
@@ -240,7 +240,7 @@ func (i *Ipmi) PxeOnce(ctx context.Context) (status bool, err error) {
 func (i *Ipmi) IsOn(ctx context.Context) (status bool, err error) {
 	output, err := i.run(ctx, []string{"chassis", "power", "status"})
 	if err != nil {
-		return false, fmt.Errorf("%v: %v", err, output)
+		return false, fmt.Errorf("%w: %v", err, output)
 	}
 
 	if strings.Contains(output, "Chassis Power is on") {

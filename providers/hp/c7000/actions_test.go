@@ -161,13 +161,16 @@ func Test_chassisBMC(t *testing.T) {
 	}
 
 	for _, tt := range tests {
+		// https://github.com/golang/go/wiki/CommonMistakes#using-reference-to-loop-iterator-variable
+		tt := tt
+
 		t.Run(tt.name, func(t *testing.T) {
 			got, err := tt.bmcMethod()
-
 			if (err != nil) != tt.wantErr {
 				t.Errorf("error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
+
 			if got != tt.want {
 				t.Errorf("got = %v, want %v", got, tt.want)
 			}

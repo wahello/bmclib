@@ -477,16 +477,16 @@ func (i *IDrac8) LdapGroup(cfgGroup []*cfgresources.LdapGroup, cfgLdap *cfgresou
 		groupDn = escapeLdapString(groupDn)
 
 		endpoint := fmt.Sprintf("data?set=xGLGroup%dName:%s", groupID, groupDn)
-		response, err := i.get(endpoint, nil)
-		if err != nil {
-			i.log.V(1).Error(err, "GET request failed.",
+		response, requestErr := i.get(endpoint, nil)
+		if requestErr != nil {
+			i.log.V(1).Error(requestErr, "GET request failed.",
 				"IP", i.ip,
 				"Model", i.HardwareType(),
 				"endpoint", endpoint,
 				"step", "applyLdapGroupParams",
 				"response", string(response),
 			)
-			return err
+			return requestErr
 		}
 
 		i.log.V(1).Info("Ldap GroupDN config applied.",
@@ -712,10 +712,16 @@ func (i *IDrac8) UploadHTTPSCert(cert []byte, certFileName string, key []byte, k
 		return false, err
 	}
 
-	_ = w.WriteField("CertType", "2")
+	err = w.WriteField("CertType", "2")
+	if err != nil {
+		return false, err
+	}
 
 	// close multipart writer - adds the teminating boundary.
-	w.Close()
+	err = w.Close()
+	if err != nil {
+		return false, err
+	}
 
 	// 1. POST upload x509 cert
 	status, body, err := i.post(endpoint, form.Bytes(), w.FormDataContentType())

@@ -159,10 +159,10 @@ func (d *PsuStatus) UnmarshalJSON(data []byte) error {
 				name := rfctType.Field(i).Name
 				f := reflect.Indirect(rfct).FieldByName(name)
 
-				switch f.Kind() {
-				case reflect.String:
+				kind := f.Kind()
+				if kind == reflect.String {
 					f.SetString(data.(string))
-				case reflect.Int64:
+				} else if kind == reflect.Int64 {
 					d := int64(data.(float64))
 					if !f.OverflowInt(d) {
 						f.SetInt(d)

@@ -190,9 +190,9 @@ func setup() (r *SupermicroX, err error) {
 	password := "test"
 
 	mux.HandleFunc("/cgi/ipmi.cgi", func(w http.ResponseWriter, r *http.Request) {
-		query, err := ioutil.ReadAll(r.Body)
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+		query, readErr := ioutil.ReadAll(r.Body)
+		if readErr != nil {
+			http.Error(w, readErr.Error(), http.StatusInternalServerError)
 			return
 		}
 		_, _ = w.Write(Answers[string(query)])

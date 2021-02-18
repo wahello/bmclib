@@ -68,7 +68,9 @@ func (s *Server) ListenAndServe() (func(), string, error) {
 	}
 
 	addr := listener.Addr().String()
-	shutdown := func() { listener.Close() }
+	shutdown := func() {
+		_ = listener.Close()
+	}
 
 	go s.run(listener)
 
@@ -90,12 +92,18 @@ func (s *Server) run(listener net.Listener) {
 }
 
 func (s *Server) handleConnection(conn net.Conn) error {
-	defer conn.Close()
+	defer func() {
+		_ = conn.Close()
+	}()
+
 	serverConn, chans, reqs, err := ssh.NewServerConn(conn, s.config)
 	if err != nil {
 		return err
 	}
-	defer serverConn.Close()
+
+	defer func() {
+		_ = serverConn.Close()
+	}()
 
 	go ssh.DiscardRequests(reqs)
 	s.handleChannels(chans)
@@ -161,13 +169,14 @@ func (s *Server) handleChannel(newChannel ssh.NewChannel) {
 func generateHostKey() (ssh.Signer, error) {
 	key, err := generatePrivateKey(privateKeyBitSize)
 	if err != nil {
-		return nil, fmt.Errorf("failed to load private key: %s", err.Error())
+		return nil, fmt.Errorf("failed to load private key: %w", err)
 	}
 
 	private, err := ssh.ParsePrivateKey(encodePrivateKeyToPEM(key))
 	if err != nil {
-		return nil, fmt.Errorf("failed to parse private key: %s", err.Error())
+		return nil, fmt.Errorf("failed to parse private key: %w", err)
 	}
+
 	return private, nil
 }
 

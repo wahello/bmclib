@@ -87,7 +87,10 @@ func (i *IDrac8) put(endpoint string, payload []byte) (statusCode int, response 
 	if err != nil {
 		return statusCode, response, err
 	}
-	defer resp.Body.Close()
+
+	defer func() {
+		_ = resp.Body.Close()
+	}()
 
 	respDump, _ := httputil.DumpResponse(resp, true)
 	i.log.V(2).Info("responseTrace", "responseDump", string(respDump))
@@ -146,7 +149,11 @@ func (i *IDrac8) post(endpoint string, data []byte, formDataContentType string) 
 	if err != nil {
 		return 0, []byte{}, err
 	}
-	defer resp.Body.Close()
+
+	defer func() {
+		_ = resp.Body.Close()
+	}()
+
 	respDump, _ := httputil.DumpResponse(resp, true)
 	i.log.V(2).Info("responseTrace", "responseDump", string(respDump))
 
@@ -192,7 +199,11 @@ func (i *IDrac8) get(endpoint string, extraHeaders *map[string]string) (payload 
 	if err != nil {
 		return payload, err
 	}
-	defer resp.Body.Close()
+
+	defer func() {
+		_ = resp.Body.Close()
+	}()
+
 	respDump, _ := httputil.DumpResponse(resp, true)
 	i.log.V(2).Info("responseTrace", "responseDump", string(respDump))
 
@@ -353,9 +364,9 @@ func (i *IDrac8) PowerKw() (power float64, err error) {
 	}
 
 	if iDracRoot.Powermonitordata != nil && iDracRoot.Powermonitordata.PresentReading != nil && iDracRoot.Powermonitordata.PresentReading.Reading != nil {
-		value, err := strconv.Atoi(iDracRoot.Powermonitordata.PresentReading.Reading.Reading)
-		if err != nil {
-			return power, err
+		value, conversionErr := strconv.Atoi(iDracRoot.Powermonitordata.PresentReading.Reading.Reading)
+		if conversionErr != nil {
+			return power, conversionErr
 		}
 		return float64(value) / 1000.00, err
 	}
@@ -534,16 +545,16 @@ func (i *IDrac8) Memory() (mem int, err error) {
 		if component.Classname == "DCIM_SystemView" {
 			for _, property := range component.Properties {
 				if property.Name == "SysMemTotalSize" && property.Type == "uint32" {
-					size, err := strconv.Atoi(property.Value)
-					if err != nil {
-						return mem, err
+					size, conversionErr := strconv.Atoi(property.Value)
+					if conversionErr != nil {
+						return mem, conversionErr
 					}
-					return size / 1024, err
+					return size / 1024, nil
 				}
 			}
 		}
 	}
-	return mem, err
+	return mem, nil
 }
 
 // Disks returns a list of disks installed on the device
@@ -578,9 +589,9 @@ func (i *IDrac8) Disks() (disks []*devices.Disk, err error) {
 				} else if property.Name == "PrimaryStatus" {
 					disk.Status = property.DisplayValue
 				} else if property.Name == "SizeInBytes" {
-					size, err := strconv.Atoi(property.Value)
-					if err != nil {
-						return disks, err
+					size, conversionErr := strconv.Atoi(property.Value)
+					if conversionErr != nil {
+						return disks, conversionErr
 					}
 					disk.Size = fmt.Sprintf("%d GB", size/1024/1024/1024)
 				} else if property.Name == "Revision" {

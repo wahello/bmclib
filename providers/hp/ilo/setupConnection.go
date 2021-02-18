@@ -70,7 +70,11 @@ func (i *Ilo) httpLogin() (err error) {
 	if err != nil {
 		return err
 	}
-	defer resp.Body.Close()
+
+	defer func() {
+		_ = resp.Body.Close()
+	}()
+
 	respDump, _ := httputil.DumpResponse(resp, true)
 	i.log.V(2).Info("responseTrace", "responseDump", string(respDump))
 
@@ -105,8 +109,12 @@ func (i *Ilo) Close(ctx context.Context) error {
 			if err != nil {
 				multiErr = multierror.Append(multiErr, err)
 			} else {
-				defer resp.Body.Close()
-				defer io.Copy(ioutil.Discard, resp.Body) // nolint
+				defer func() {
+					_ = resp.Body.Close()
+				}()
+				defer func() {
+					_, _ = io.Copy(ioutil.Discard, resp.Body)
+				}()
 
 				respDump, _ := httputil.DumpResponse(resp, true)
 				i.log.V(2).Info("responseTrace", "responseDump", string(respDump))

@@ -184,8 +184,8 @@ func (s *SupermicroX) User(users []*cfgresources.User) (err error) {
 		// 200 with this response: result=LANG_CONFUSER_COMMON_ERR7
 		// post with a good password complexity gets a
 		// 200 with this response: result=LANG_CONFUSR_RESULT_OK
-		response, statusCode, err := s.post(endpoint, &form, []byte{}, "")
-		if err != nil || statusCode != 200 {
+		response, statusCode, requestErr := s.post(endpoint, &form, []byte{}, "")
+		if requestErr != nil || statusCode != 200 {
 			msg := "POST request to set User config returned error."
 			log.WithFields(log.Fields{
 				"IP":         s.ip,
@@ -193,7 +193,7 @@ func (s *SupermicroX) User(users []*cfgresources.User) (err error) {
 				"Endpoint":   endpoint,
 				"StatusCode": statusCode,
 				"Step":       helper.WhosCalling(),
-				"Error":      err,
+				"Error":      requestErr,
 			}).Warn(msg)
 			return errors.New(msg)
 		}
@@ -212,7 +212,6 @@ func (s *SupermicroX) User(users []*cfgresources.User) (err error) {
 			"Model": s.HardwareType(),
 			"User":  user.Name,
 		}).Debug("User parameters applied.")
-
 	}
 
 	return err
@@ -491,8 +490,8 @@ func (s *SupermicroX) LdapGroup(cfgGroup []*cfgresources.LdapGroup, cfgLdap *cfg
 
 		endpoint := "op.cgi"
 		form, _ := query.Values(configLdap)
-		_, statusCode, err := s.post(endpoint, &form, []byte{}, "")
-		if err != nil || statusCode != 200 {
+		_, statusCode, requestErr := s.post(endpoint, &form, []byte{}, "")
+		if requestErr != nil || statusCode != 200 {
 			msg := "POST request to set Ldap config returned error."
 			log.WithFields(log.Fields{
 				"IP":         s.ip,
@@ -500,7 +499,7 @@ func (s *SupermicroX) LdapGroup(cfgGroup []*cfgresources.LdapGroup, cfgLdap *cfg
 				"Endpoint":   endpoint,
 				"StatusCode": statusCode,
 				"Step":       helper.WhosCalling(),
-				"Error":      err,
+				"Error":      requestErr,
 			}).Warn(msg)
 			return errors.New(msg)
 		}
@@ -651,7 +650,10 @@ func (s *SupermicroX) UploadHTTPSCert(cert []byte, certFileName string, key []by
 	}
 
 	// close multipart writer - adds the teminating boundary.
-	w.Close()
+	err = w.Close()
+	if err != nil {
+		return false, err
+	}
 
 	// 1. upload
 	_, status, err := s.post(endpoint, &url.Values{}, form.Bytes(), w.FormDataContentType())

@@ -70,7 +70,10 @@ func (m *M1000e) get(endpoint string) (payload []byte, err error) {
 	if err != nil {
 		return payload, err
 	}
-	defer resp.Body.Close()
+
+	defer func() {
+		_ = resp.Body.Close()
+	}()
 
 	payload, err = ioutil.ReadAll(resp.Body)
 	if err != nil {
@@ -178,8 +181,8 @@ func (m *M1000e) Fans() (fans []*devices.Fan, err error) {
 				status = fan.ActiveError
 			}
 
-			p, err := strconv.Atoi(pos)
-			if err != nil && pos != "ECM" {
+			p, conversionErr := strconv.Atoi(pos)
+			if conversionErr != nil && pos != "ECM" {
 				return fans, fmt.Errorf("unable to read: %s", pos)
 			}
 
@@ -293,14 +296,14 @@ func (m *M1000e) Psus() (psus []*devices.Psu, err error) {
 			continue
 		}
 
-		i, err := strconv.ParseFloat(strings.TrimSuffix(psu.PsuAcCurrent, " A"), 64)
-		if err != nil {
-			return psus, err
+		i, conversionErr := strconv.ParseFloat(strings.TrimSuffix(psu.PsuAcCurrent, " A"), 64)
+		if conversionErr != nil {
+			return psus, conversionErr
 		}
 
-		e, err := strconv.ParseFloat(psu.PsuAcVolts, 64)
-		if err != nil {
-			return psus, err
+		e, conversionErr := strconv.ParseFloat(psu.PsuAcVolts, 64)
+		if conversionErr != nil {
+			return psus, conversionErr
 		}
 
 		var status string
@@ -310,9 +313,9 @@ func (m *M1000e) Psus() (psus []*devices.Psu, err error) {
 			status = psu.PsuActiveError
 		}
 
-		psuPosition, err := strconv.Atoi(strings.Split(psu.PsuPosition, "_")[1])
-		if err != nil {
-			return psus, err
+		psuPosition, conversionErr := strconv.Atoi(strings.Split(psu.PsuPosition, "_")[1])
+		if conversionErr != nil {
+			return psus, conversionErr
 		}
 
 		p := &devices.Psu{
@@ -343,14 +346,14 @@ func (m *M1000e) StorageBlades() (storageBlades []*devices.StorageBlade, err err
 			storageBlade.Serial = strings.ToLower(dellBlade.BladeSvcTag)
 			storageBlade.Model = dellBlade.BladeModel
 			storageBlade.PowerKw = float64(dellBlade.ActualPwrConsump) / 1000
-			temp, err := strconv.Atoi(dellBlade.BladeTemperature)
-			if err != nil {
+			temp, conversionErr := strconv.Atoi(dellBlade.BladeTemperature)
+			if conversionErr != nil {
 				m.log.V(1).Info("Auditing blade",
 					"operation", "connection",
 					"ip", m.ip,
 					"position", storageBlade.BladePosition,
 					"type", "chassis",
-					"error", internal.ErrStringOrEmpty(err),
+					"error", internal.ErrStringOrEmpty(conversionErr),
 				)
 				continue
 			}
@@ -389,9 +392,9 @@ func (m *M1000e) Blades() (blades []*devices.Blade, err error) {
 			}
 
 			blade.PowerKw = float64(dellBlade.ActualPwrConsump) / 1000
-			temp, err := strconv.Atoi(dellBlade.BladeTemperature)
-			if err != nil {
-				m.log.V(1).Info(internal.ErrStringOrEmpty(err),
+			temp, conversionErr := strconv.Atoi(dellBlade.BladeTemperature)
+			if conversionErr != nil {
+				m.log.V(1).Info(internal.ErrStringOrEmpty(conversionErr),
 					"operation", "connection",
 					"ip", m.ip,
 					"position", blade.BladePosition,
@@ -430,9 +433,9 @@ func (m *M1000e) Blades() (blades []*devices.Blade, err error) {
 			}
 
 			if strings.HasPrefix(blade.BmcAddress, "[") {
-				payload, err := m.get(fmt.Sprintf("blade_status?id=%d&cat=C10&tab=T41&id=P78", blade.BladePosition))
-				if err != nil {
-					m.log.V(1).Info(internal.ErrStringOrEmpty(err),
+				payload, requestErr := m.get(fmt.Sprintf("blade_status?id=%d&cat=C10&tab=T41&id=P78", blade.BladePosition))
+				if requestErr != nil {
+					m.log.V(1).Info(internal.ErrStringOrEmpty(requestErr),
 						"operation", "connection",
 						"ip", m.ip,
 						"position", blade.BladePosition,

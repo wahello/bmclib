@@ -88,7 +88,10 @@ func (s *SupermicroX) get(endpoint string) (payload []byte, err error) {
 	if err != nil {
 		return payload, err
 	}
-	defer resp.Body.Close()
+
+	defer func() {
+		_ = resp.Body.Close()
+	}()
 
 	respDump, _ := httputil.DumpResponse(resp, true)
 	s.log.V(2).Info("", "responseDump", string(respDump))
@@ -155,7 +158,10 @@ func (s *SupermicroX) post(endpoint string, urlValues *url.Values, form []byte, 
 	if err != nil {
 		return response, statusCode, err
 	}
-	defer resp.Body.Close()
+
+	defer func() {
+		_ = resp.Body.Close()
+	}()
 
 	respDump, _ := httputil.DumpResponse(resp, true)
 	s.log.V(2).Info("", "responseDump", string(respDump))
@@ -199,7 +205,10 @@ func (s *SupermicroX) query(requestType string) (ipmi *supermicro.IPMI, err erro
 	if err != nil {
 		return ipmi, err
 	}
-	defer resp.Body.Close()
+
+	defer func() {
+		_ = resp.Body.Close()
+	}()
 
 	payload, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
@@ -329,10 +338,9 @@ func (s *SupermicroX) Memory() (mem int, err error) {
 	ipmi, err := s.query("op=SMBIOS_INFO.XML&r=(0,0)")
 
 	for _, dimm := range ipmi.Dimm {
-		dimm := strings.TrimSuffix(dimm.Size, " MiB")
-		size, err := strconv.Atoi(dimm)
-		if err != nil {
-			return mem, err
+		size, conversionErr := strconv.Atoi(strings.TrimSuffix(dimm.Size, " MiB"))
+		if conversionErr != nil {
+			return 0, conversionErr
 		}
 		mem += size
 	}
@@ -388,8 +396,8 @@ func (s *SupermicroX) PowerKw() (power float64, err error) {
 	}
 
 	if ipmi.Power != nil {
-		p, err := strconv.Atoi(ipmi.POWER.HAVERAGE)
-		if err != nil {
+		p, conversionErr := strconv.Atoi(ipmi.POWER.HAVERAGE)
+		if conversionErr != nil {
 			return power, errors.ErrUnableToReadData
 		}
 		power = float64(p) / 1000.00
@@ -415,10 +423,10 @@ func (s *SupermicroX) PowerState() (state string, err error) {
 }
 
 // TempC returns the current temperature of the machine
-func (s *SupermicroX) TempC() (temp int, err error) {
+func (s *SupermicroX) TempC() (int, error) {
 	ipmi, err := s.query("op=SENSOR_INFO.XML&r=(1,ff)")
 	if err != nil {
-		return temp, err
+		return 0, err
 	}
 
 	if ipmi.SensorInfo != nil {
@@ -427,17 +435,17 @@ func (s *SupermicroX) TempC() (temp int, err error) {
 				// supermicro temperature reading format = 44C/111F
 				// the reading comes in as 00c000
 				reading := strings.Split(elem.READING, "c")
-				temp, err := strconv.Atoi(reading[0])
-				if err != nil {
-					return temp, err
+				tempC, conversionErr := strconv.Atoi(reading[0])
+				if conversionErr != nil {
+					return 0, conversionErr
 				}
 
-				return temp, err
+				return tempC, nil
 			}
 		}
 	}
 
-	return temp, err
+	return 0, nil
 }
 
 // IsBlade returns if the current hardware is a blade or not

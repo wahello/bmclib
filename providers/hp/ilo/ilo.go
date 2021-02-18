@@ -70,7 +70,10 @@ func New(ctx context.Context, host string, username string, password string, log
 	if err != nil {
 		return nil, err
 	}
-	defer resp.Body.Close()
+
+	defer func() {
+		_ = resp.Body.Close()
+	}()
 
 	rimpBlade := &hp.RimpBlade{}
 	err = xml.Unmarshal(payload, rimpBlade)
@@ -133,7 +136,11 @@ func (i *Ilo) get(endpoint string) (payload []byte, err error) {
 	if err != nil {
 		return payload, err
 	}
-	defer resp.Body.Close()
+
+	defer func() {
+		_ = resp.Body.Close()
+	}()
+
 	respDump, _ := httputil.DumpResponse(resp, true)
 	i.log.V(2).Info("responseTrace", "responseDump", string(respDump))
 
@@ -176,7 +183,11 @@ func (i *Ilo) post(endpoint string, data []byte) (statusCode int, body []byte, e
 	if err != nil {
 		return 0, []byte{}, err
 	}
-	defer resp.Body.Close()
+
+	defer func() {
+		_ = resp.Body.Close()
+	}()
+
 	respDump, _ := httputil.DumpResponse(resp, true)
 	i.log.V(2).Info("responseTrace", "responseDump", string(respDump))
 
@@ -211,16 +222,16 @@ func (i *Ilo) ChassisSerial() (string, error) {
 		return "", err
 	}
 
-	if rckInfo.EncSn == "Unknown" {
-		chassisInfo, err := i.parseChassisInfo()
-		if err != nil {
-			return "", err
-		}
-
-		return strings.ToLower(chassisInfo.ChassisSn), nil
+	if rckInfo.EncSn != "Unknown" {
+		return strings.ToLower(rckInfo.EncSn), nil
 	}
 
-	return strings.ToLower(rckInfo.EncSn), err
+	chassisInfo, err := i.parseChassisInfo()
+	if err != nil {
+		return "", err
+	}
+
+	return strings.ToLower(chassisInfo.ChassisSn), nil
 }
 
 // Model returns the device model

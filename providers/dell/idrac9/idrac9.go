@@ -85,7 +85,10 @@ func (i *IDrac9) get(endpoint string, extraHeaders *map[string]string) (payload 
 	if err != nil {
 		return payload, err
 	}
-	defer resp.Body.Close()
+
+	defer func() {
+		_ = resp.Body.Close()
+	}()
 
 	respDump, _ := httputil.DumpResponse(resp, true)
 	i.log.V(2).Info("responseTrace", "responseDump", string(respDump))
@@ -120,7 +123,9 @@ func (i *IDrac9) put(endpoint string, payload []byte) (statusCode int, response 
 	if err != nil {
 		return statusCode, response, err
 	}
-	defer resp.Body.Close()
+	defer func() {
+		_ = resp.Body.Close()
+	}()
 
 	respDump, _ := httputil.DumpResponse(resp, true)
 	i.log.V(2).Info("responseTrace", "responseDump", string(respDump))
@@ -156,7 +161,10 @@ func (i *IDrac9) delete(endpoint string) (statusCode int, payload []byte, err er
 	if err != nil {
 		return statusCode, payload, err
 	}
-	defer resp.Body.Close()
+
+	defer func() {
+		_ = resp.Body.Close()
+	}()
 
 	respDump, _ := httputil.DumpResponse(resp, true)
 	i.log.V(2).Info("responseTrace", "responseDump", string(respDump))
@@ -201,7 +209,11 @@ func (i *IDrac9) post(endpoint string, data []byte, formDataContentType string) 
 	if err != nil {
 		return 0, []byte{}, err
 	}
-	defer resp.Body.Close()
+
+	defer func() {
+		_ = resp.Body.Close()
+	}()
+
 	respDump, _ := httputil.DumpResponse(resp, true)
 	i.log.V(2).Info("responseTrace", "responseDump", string(respDump))
 
@@ -571,11 +583,11 @@ func (i *IDrac9) Memory() (mem int, err error) {
 		if component.Classname == "DCIM_SystemView" {
 			for _, property := range component.Properties {
 				if property.Name == "SysMemTotalSize" && property.Type == "uint32" {
-					size, err := strconv.Atoi(property.Value)
-					if err != nil {
-						return mem, err
+					size, conversionErr := strconv.Atoi(property.Value)
+					if conversionErr != nil {
+						return mem, conversionErr
 					}
-					return size / 1024, err
+					return size / 1024, nil
 				}
 			}
 		}
@@ -626,11 +638,11 @@ func (i *IDrac9) CPU() (cpu string, cpuCount int, coreCount int, hyperthreadCoun
 						cpu = httpclient.StandardizeProcessorName(property.DisplayValue)
 					} else if property.Name == "NumberOfProcessorCores" && property.Type == "uint32" {
 						if coreCount, e = strconv.Atoi(property.Value); e != nil {
-							err = multierror.Append(err, fmt.Errorf("invalid core count %s", e))
+							err = multierror.Append(err, fmt.Errorf("invalid core count %w", e))
 						}
 					} else if property.Name == "NumberOfEnabledThreads" && property.Type == "uint32" {
 						if hyperthreadCount, e = strconv.Atoi(property.Value); e != nil {
-							err = multierror.Append(err, fmt.Errorf("invalid thread count %s", e))
+							err = multierror.Append(err, fmt.Errorf("invalid thread count %w", e))
 						}
 					}
 				}
@@ -902,9 +914,9 @@ func (i *IDrac9) Disks() (disks []*devices.Disk, err error) {
 				} else if property.Name == "DeviceDescription" {
 					disk.Location = property.DisplayValue
 				} else if property.Name == "SizeInBytes" {
-					size, err := strconv.Atoi(property.Value)
-					if err != nil {
-						return disks, err
+					size, conversionErr := strconv.Atoi(property.Value)
+					if conversionErr != nil {
+						return disks, conversionErr
 					}
 					disk.Size = fmt.Sprintf("%d GB", size/1024/1024/1024)
 				} else if property.Name == "Revision" {

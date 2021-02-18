@@ -66,7 +66,10 @@ func (s *SSHClient) run(command string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	defer session.Close()
+
+	defer func() {
+		_ = session.Close()
+	}()
 
 	output, err := session.CombinedOutput(command)
 	return string(output), err
@@ -81,7 +84,7 @@ func (s *SSHClient) Close() error {
 		return nil
 	}
 	defer func() {
-		s.client.Close()
+		_ = s.client.Close()
 		s.client = nil
 	}()
 

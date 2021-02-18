@@ -21,13 +21,17 @@ func (i *Ilo) CurrentHTTPSCert() ([]*x509.Certificate, bool, error) {
 		Timeout: time.Duration(10) * time.Second,
 	}
 
+	// Disable the linter's objection to insecure stuff.
+	// (https://github.com/securego/gosec/issues/278)
+	// #nosec G402
 	conn, err := tls.DialWithDialer(dialer, "tcp", i.ip+":"+"443", &tls.Config{InsecureSkipVerify: true})
-
 	if err != nil {
 		return []*x509.Certificate{{}}, true, err
 	}
 
-	defer conn.Close()
+	defer func() {
+		_ = conn.Close()
+	}()
 
 	return conn.ConnectionState().PeerCertificates, true, nil
 
